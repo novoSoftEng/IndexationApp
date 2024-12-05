@@ -2,13 +2,13 @@
   <mat-grid-list cols="4" rowHeight="1:1" gutterSize="16px" class="gallery-grid">
     <mat-grid-tile *ngFor="let image of images" (click)="openDialog(image)">
       <div class="image-container">
-        <img [src]="image.url" [alt]="image.title" class="gallery-image"/>
+        <img [src]="image.url" [alt]="image.image" class="gallery-image"/>
         <div class="image-overlay">
           <mat-icon>zoom_in</mat-icon>
         </div>
       </div>
       <mat-grid-tile-footer>
-        <div class="image-title">{{ image.title }}</div>
+        <div class="image-title">{{ image.image }}</div>
       </mat-grid-tile-footer>
     </mat-grid-tile>
   </mat-grid-list>
@@ -16,7 +16,7 @@
   <!-- Image Dialog -->
   <ng-template #dialogTemplate let-dialogRef="dialogRef">
     <mat-dialog-content>
-      <img [src]="dialogRef.data.url" [alt]="dialogRef.data.title" class="full-screen-image"/>
+      <img [src]="dialogRef.data.url" [alt]="dialogRef.data.image" class="full-screen-image"/>
     </mat-dialog-content>
   </ng-template>
   

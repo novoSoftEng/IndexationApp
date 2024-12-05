@@ -1,12 +1,12 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { map, Observable } from 'rxjs';
 import { environment } from '../environment';
 @Injectable({
   providedIn: 'root'
 })
 export class ImageService {
-  private apiUrl = `${environment.apiUrl}/images`;  // Assuming the backend is hosted at apiUrl
+  private apiUrl = `${environment.apiUrl}`;  // Assuming the backend is hosted at apiUrl
 
   constructor(private http: HttpClient) {}
 
@@ -32,11 +32,17 @@ export class ImageService {
 
   // 4. Get a list of all images
   getAllImages(): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}`);
+    return this.http.get<any>(`${this.apiUrl}/download`);
   }
 
   // 5. Get a specific image (by filename)
   getImage(filename: string): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/${filename}`);
+    return this.http.get<any>(`${this.apiUrl}/dowload/${filename}`);
+  }
+  getAllImagesDetails(): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/images`);
+  }
+  getImageDetails(filename: string): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/images/${filename}`);
   }
 }

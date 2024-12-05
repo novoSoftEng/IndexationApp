@@ -6,6 +6,8 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import {MatGridListModule} from '@angular/material/grid-list';
 import { ImageDialogComponent } from './image-dialog/image-dialog.component';
 import { CommonModule } from '@angular/common';
+import { ImageService } from '../Services/image.service';
+import { forkJoin, map, switchMap } from 'rxjs';
 @Component({
   selector: 'app-gallery',
   standalone: true,
@@ -14,16 +16,28 @@ import { CommonModule } from '@angular/common';
   styleUrl: './gallery.component.css'
 })
 export class GalleryComponent {
-  images = [
-    { url: 'https://via.placeholder.com/300x200', title: 'Image 1' },
-    { url: 'https://via.placeholder.com/300x200', title: 'Image 2' },
-    { url: 'https://via.placeholder.com/300x200', title: 'Image 3' },
-    { url: 'https://via.placeholder.com/300x200', title: 'Image 4' },
-    { url: 'https://via.placeholder.com/300x200', title: 'Image 5' },
-    { url: 'https://via.placeholder.com/300x200', title: 'Image 6' },
-  ];
+images: any;
+constructor(public dialog: MatDialog, private imageService: ImageService) {
+  this.imageService.getAllImages().pipe(
+    map((response: { images: string[] }) => response.images), // Extract the images array
+    switchMap((images: string[]) =>
+      forkJoin(
+        images.map((image: string) =>
+          this.imageService.downloadFile(image).pipe(
+            map((blob) => ({
+              image,
+              url: URL.createObjectURL(blob),
+            }))
+          )
+        )
+      )
+    )
+  ).subscribe((enhancedImages) => {
+    this.images = enhancedImages; // Store the final array in the component
+    console.log("Enhanced images", this.images);
+  });
+}
 
-  constructor(public dialog: MatDialog) {}
 
   openDialog(image: any): void {
     this.dialog.open(ImageDialogComponent, {
