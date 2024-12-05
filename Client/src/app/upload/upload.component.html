@@ -1,0 +1,22 @@
+<div class="container">
+  <h2>Image Upload</h2>
+
+  <div cdkDropList #uploadList="cdkDropList" [cdkDropListData]="uploadQueue" class="list"
+       (cdkDropListDropped)="drop($event)">
+    <div class="upload-area" (click)="fileInput.click()" (drop)="onFileDrop($event)">
+      <input type="file" hidden (change)="onFileSelect($event)" #fileInput multiple>
+      <p>Drag & drop your images here or click to upload</p>
+    </div>
+    <div class="list-item" *ngFor="let image of uploadQueue" cdkDrag>
+      <img [src]="image.preview" alt="Preview" class="preview-image" />
+      <button mat-icon-button (click)="removeImage(image)">
+        <mat-icon>delete</mat-icon>
+      </button>
+    </div>
+  </div>
+  <div>
+    <button class="save" (click)="save()">
+      Save to Gallery
+    </button>
+  </div>
+</div>
