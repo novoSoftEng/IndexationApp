@@ -1,10 +1,45 @@
 <mat-dialog-content class="dialog-content">
-    <div class="image-wrapper">
-      <img [src]="data.url" [alt]="data.image" class="full-screen-image" />
-    </div>
-    <div class="action-buttons">
-      <button mat-flat-button class="download" color="primary" (click)="downloadImage()">Download</button>
-      <button mat-flat-button class="delete" color="warn" (click)="deleteImage()">Delete</button>
-    </div>
-  </mat-dialog-content>
-  
+  <div class="image-wrapper">
+    <img [src]="data.url" [alt]="data.image" class="full-screen-image" />
+  </div>
+
+  <div class="action-buttons">
+    <button mat-flat-button class="download" color="primary" (click)="downloadImage()">Download</button>
+    <button mat-flat-button class="delete" color="warn" (click)="deleteImage()">Delete</button>
+  </div>
+
+  <!-- Accordion Section for Image Characteristics -->
+  <mat-accordion>
+    <mat-expansion-panel>
+      <mat-expansion-panel-header>
+        <mat-panel-title>Image Characteristics</mat-panel-title>
+      </mat-expansion-panel-header>
+
+      <div class="characteristics-container">
+        <!-- Color Histogram Graph -->
+        <div *ngIf="data.characteristics?.color_histogram">
+          <h3>Color Histogram</h3>
+          <canvas id="color-histogram-canvas"></canvas>
+        </div>
+
+        <!-- Dominant Colors Graph -->
+        <div *ngIf="data.characteristics?.dominant_colors">
+          <h3>Dominant Colors</h3>
+          <canvas id="dominant-colors-canvas"></canvas>
+        </div>
+
+        <!-- Texture Descriptors -->
+        <div *ngIf="data.characteristics?.texture_descriptors">
+          <h3>Texture Descriptors</h3>
+          <pre>{{ data.characteristics.texture_descriptors | json }}</pre>
+        </div>
+
+        <!-- Hu Moments -->
+        <div *ngIf="data.characteristics?.hu_moments">
+          <h3>Hu Moments</h3>
+          <pre>{{ data.characteristics.hu_moments | json }}</pre>
+        </div>
+      </div>
+    </mat-expansion-panel>
+  </mat-accordion>
+</mat-dialog-content>

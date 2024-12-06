@@ -8,15 +8,40 @@ import { MatDialogModule ,MAT_DIALOG_DATA,
   MatDialogTitle } from '@angular/material/dialog';
 import { GalleryComponent } from '../gallery.component';
 import { ImageService } from '../../Services/image.service';
+import {CdkAccordionModule} from '@angular/cdk/accordion';
+import { Chart } from 'chart.js';
+import {MatExpansionModule} from '@angular/material/expansion';
+import { CommonModule } from '@angular/common';
 @Component({
   selector: 'app-image-dialog',
   standalone: true,
-  imports: [MatDialogModule],
+  imports: [CommonModule,MatDialogModule,MatExpansionModule],
   templateUrl: './image-dialog.component.html',
   styleUrl: './image-dialog.component.css'
 })
 export class ImageDialogComponent {
-  constructor (private imageService: ImageService){}
+  chart: Chart<"bar", any, unknown> | undefined;
+  constructor (private imageService: ImageService){
+
+    this.imageService.getImageDetails(this.data.image).subscribe(
+      (d)=>{
+        // Extracting characteristics from the response
+    this.data.characteristics = d.image[0].characteristics;
+
+    // Logging the characteristics data
+    console.log("Data of characteristics:", this.data.characteristics);
+    if (this.data.characteristics.color_histogram) {
+      this.createColorHistogramChart();
+    }
+    if (this.data.characteristics.dominant_colors) {
+      this.createDominantColorsChart();
+    }
+      }
+    );
+
+    
+  }
+
   readonly dialogRef = inject(MatDialogRef<GalleryComponent>);
   readonly data = inject<any>(MAT_DIALOG_DATA);
 
@@ -41,5 +66,56 @@ export class ImageDialogComponent {
 
     this.dialogRef.close({ action: 'delete', image: this.data.image });
   }
+  createColorHistogramChart() {
+    const colorHistogram = this.data.characteristics.color_histogram;
+    const labels = Array.from({ length: colorHistogram.length }, (_, i) => `Bin ${i + 1}`);
+    const data = colorHistogram.flat();
 
+    const canvas: HTMLCanvasElement | null = document.querySelector('#color-histogram-canvas');
+    if (canvas) {
+      this.chart = new Chart(canvas, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Color Histogram',
+            data: data,
+            backgroundColor: 'rgba(0, 123, 255, 0.5)',
+            borderColor: 'rgba(0, 123, 255, 1)',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: { beginAtZero: true }
+          }
+        }
+      });
+    } else {
+      console.error('Canvas for color histogram chart not found.');
+    }
+  }
+
+  createDominantColorsChart() {
+    const dominantColors = this.data.characteristics.dominant_colors;
+    const colors = dominantColors.map((color: number[]) => `rgb(${color.join(',')})`);
+    const data = dominantColors.map(() => 1);
+
+    const canvas: HTMLCanvasElement | null = document.querySelector('#dominant-colors-canvas');
+    if (canvas) {
+      new Chart(canvas, {
+        type: 'pie',
+        data: {
+          labels: colors,
+          datasets: [{
+            data: data,
+            backgroundColor: colors
+          }]
+        }
+      });
+    } else {
+      console.error('Canvas for dominant colors chart not found.');
+    }
+  }
 }
