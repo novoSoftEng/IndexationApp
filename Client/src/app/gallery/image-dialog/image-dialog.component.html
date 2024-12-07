@@ -13,38 +13,22 @@
     <button mat-flat-button class="delete" color="warn" (click)="deleteImage()">Delete</button>
   </div>
 
-  <!-- Accordion Section for Image Characteristics -->
-  <mat-accordion>
-    <mat-expansion-panel>
-      <mat-expansion-panel-header>
-        <mat-panel-title>Image Characteristics</mat-panel-title>
-      </mat-expansion-panel-header>
-
+<div>
+        <h2>Image Characteristics</h2>
+  
       <div class="characteristics-container">
         <!-- Color Histogram Graph -->
-        <div *ngIf="data.characteristics?.color_histogram">
+        <div *ngIf="data.characteristics?.color_histogram" class="graphs">
           <h3>Color Histogram</h3>
           <canvas id="color-histogram-canvas"></canvas>
         </div>
-
+  
         <!-- Dominant Colors Graph -->
-        <div *ngIf="data.characteristics?.dominant_colors">
+        <div *ngIf="data.characteristics?.dominant_colors" class="graphs">
           <h3>Dominant Colors</h3>
           <canvas id="dominant-colors-canvas"></canvas>
         </div>
-
-        <!-- Texture Descriptors -->
-        <div *ngIf="data.characteristics?.texture_descriptors">
-          <h3>Texture Descriptors</h3>
-          <pre>{{ data.characteristics.texture_descriptors | json }}</pre>
-        </div>
-
-        <!-- Hu Moments -->
-        <div *ngIf="data.characteristics?.hu_moments">
-          <h3>Hu Moments</h3>
-          <pre>{{ data.characteristics.hu_moments | json }}</pre>
-        </div>
       </div>
-    </mat-expansion-panel>
-  </mat-accordion>
+    </div>
+  
 </mat-dialog-content>
