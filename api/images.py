@@ -1,11 +1,15 @@
-import cv2
-import numpy as np
-from flask import Flask, request, jsonify
-from flask_restful import Api, Resource
-import cv2
-import numpy as np
 import os
+import cv2
+import numpy as np
+from flask import Flask, request, jsonify, Response
+from flask_restful import Api, Resource
+from werkzeug.utils import secure_filename
 
+
+# Directory to store uploaded images
+UPLOAD_FOLDER = '../uploaded_images'
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
 
 app = Flask(__name__)
 api = Api(app)
@@ -56,7 +60,6 @@ def transform_image(image_path, crop_coords=None, resize_dims=None, flip=None, r
 
 
 # Helper functions to calculate descriptors
-
 def calculate_color_histogram(image):
     """Calculate color histogram for an image."""
     histogram = []
