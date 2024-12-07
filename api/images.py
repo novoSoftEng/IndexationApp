@@ -2,8 +2,10 @@ import os
 import cv2
 import numpy as np
 from flask import Flask, request, jsonify, Response
+from pymongo import MongoClient
 from flask_restful import Api, Resource
 from werkzeug.utils import secure_filename
+from scipy.spatial.distance import euclidean
 
 
 # Directory to store uploaded images
@@ -11,8 +13,20 @@ UPLOAD_FOLDER = '../uploaded_images'
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
+    
+# MongoDB Configuration
+MONGO_URI = "mongodb://localhost:27017/"
+DATABASE_NAME = "imgs_indexing"
+COLLECTION_NAME = "images"
+
+client = MongoClient(MONGO_URI)
+db = client[DATABASE_NAME]
+collection = db[COLLECTION_NAME]
+
+
 app = Flask(__name__)
 api = Api(app)
+
 
 def transform_image(image_path, crop_coords=None, resize_dims=None, flip=None, rotate_angle=None):
     """
@@ -55,8 +69,6 @@ def transform_image(image_path, crop_coords=None, resize_dims=None, flip=None, r
 
     # Return the binary data
     return buffer.tobytes()
-
-
 
 
 # Helper functions to calculate descriptors
@@ -102,14 +114,103 @@ def calculate_hu_moments(image):
         hu_moments = cv2.HuMoments(moments).flatten().tolist()
         return hu_moments
     return []
+
 def calculate_average_color(image):
     average_color = cv2.mean(image)[:3]  # Excludes alpha if present
     return list(map(int, average_color))  # Convert to integers
+
 def calculate_edge_histogram(image):
     gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     edges = cv2.Canny(gray_image, 100, 200)  # Edge detection
     histogram = cv2.calcHist([edges], [0], None, [256], [0, 256])
     return histogram.flatten().tolist()
+
+
+def calculate_img_descriptors(image):
+    """Combine all descriptors into a global score."""
+    color_histogram = calculate_color_histogram(image)
+    dominant_colors = calculate_dominant_colors(image)
+    texture_descriptors = calculate_texture_descriptors(image)
+    hu_moments = calculate_hu_moments(image)
+    average_color = calculate_average_color(image)
+    edge_histogram = calculate_edge_histogram(image)
+
+    return {
+        "color_histogram": color_histogram,
+        "dominant_colors": dominant_colors,
+        "texture_descriptors": texture_descriptors,
+        "hu_moments": hu_moments,
+        "average_color": average_color,
+        "edge_histogram": edge_histogram
+    }
+
+
+def simple_search(img_descriptor, descriptors2, top_n=5):
+    # Define weights for each group (frame, color, and texture)
+    w1, w2, w3 = 0.1, 0.5, 0.4
+
+    similarities = []
+
+    for img2 in descriptors2:
+        img2_name = img2["filename"]
+        img2_desc = img2["characteristics"]
+
+        # Calculate group-level distances
+        frame_dist = euclidean(
+            np.hstack([img_descriptor["hu_moments"], img_descriptor["edge_histogram"]]),
+            np.hstack([img2_desc["hu_moments"], img2_desc["edge_histogram"]])
+        )
+        color_dist = euclidean(
+            np.hstack([np.hstack(img_descriptor["color_histogram"]), img_descriptor["average_color"]]),
+            np.hstack([np.hstack(img2_desc["color_histogram"]), img2_desc["average_color"]])
+        )
+        texture_dist = euclidean(
+            img_descriptor["texture_descriptors"],
+            img2_desc["texture_descriptors"]
+        )
+
+        # Combine distances into a single similarity score
+        total_distance = (
+            w1 * frame_dist +
+            w2 * color_dist +
+            w3 * texture_dist
+        )
+        similarities.append((img2_name, total_distance))
+
+    # Sort by similarity (ascending order) and take the top N
+    top_similar = sorted(similarities, key=lambda x: x[1])[:top_n]
+
+    return top_similar
+
+
+def search_similar_images():
+    try:
+        # Check if an image is uploaded
+        if "image" not in request.files:
+            return jsonify({"error": "Image file is required"}), 400
+
+        # Read the image from the request
+        file = request.files["image"]
+        image = cv2.imdecode(np.frombuffer(file.read(), np.uint8), cv2.IMREAD_COLOR)
+
+        if image is None:
+            return jsonify({"error": "Invalid image file"}), 400
+
+        # Calculate descriptors for the uploaded image
+        query_descriptor = calculate_img_descriptors(image)
+
+        # Fetch all descriptors from MongoDB
+        descriptors2 = list(collection.find({}, {"filename": 1, "characteristics": 1}))
+
+        # Perform the search
+        top_similar = simple_search(query_descriptor, descriptors2)
+
+        # Return results
+        return jsonify({"top_similar": top_similar}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 # Resource classes for API
 class TransformService(Resource):
@@ -173,6 +274,7 @@ class TransformService(Resource):
         # Return the transformed image as a response
         return Response(transformed_image, mimetype='image/jpeg')
 
+
 class DescriptorService(Resource):
     def post(self):
         """Calculate descriptors for an uploaded image or set of images."""
@@ -211,9 +313,16 @@ class DescriptorService(Resource):
 
         return jsonify({"message": "Descriptors calculated", "results": results})
 
+# RESTful resource
+class SearchService(Resource):
+    def post(self):
+        return search_similar_images()
+
+
 # Register API Endpoints
 api.add_resource(DescriptorService, '/calculate-descriptors')
 api.add_resource(TransformService, '/transform')
+api.add_resource(search_similar_images, '/search')
+
 if __name__ == '__main__':
     app.run(debug=True)
-
