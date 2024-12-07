@@ -102,6 +102,14 @@ def calculate_hu_moments(image):
         hu_moments = cv2.HuMoments(moments).flatten().tolist()
         return hu_moments
     return []
+def calculate_average_color(image):
+    average_color = cv2.mean(image)[:3]  # Excludes alpha if present
+    return list(map(int, average_color))  # Convert to integers
+def calculate_edge_histogram(image):
+    gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    edges = cv2.Canny(gray_image, 100, 200)  # Edge detection
+    histogram = cv2.calcHist([edges], [0], None, [256], [0, 256])
+    return histogram.flatten().tolist()
 
 # Resource classes for API
 class TransformService(Resource):
@@ -186,8 +194,10 @@ class DescriptorService(Resource):
             # Calculate descriptors
             color_histogram = calculate_color_histogram(image)
             dominant_colors = calculate_dominant_colors(image)
-            texture_descriptors = calculate_texture_descriptors(image)
+            texture_descriptors = calculate_texture_descriptors(image)  # Should use Gabor filters
             hu_moments = calculate_hu_moments(image)
+            average_color = calculate_average_color(image)  # New color descriptor
+            edge_histogram = calculate_edge_histogram(image)  # New texture/shape descriptor
 
             # Store results
             results[image_file.filename] = {
@@ -195,6 +205,8 @@ class DescriptorService(Resource):
                 "dominant_colors": dominant_colors,
                 "texture_descriptors": texture_descriptors,
                 "hu_moments": hu_moments,
+                "average_color": average_color,
+                "edge_histogram": edge_histogram,
             }
 
         return jsonify({"message": "Descriptors calculated", "results": results})
