@@ -15,6 +15,9 @@
     </div>
   </div>
   <div>
+    <mat-select [(ngModel)]="category" placeholder="Select a category">
+      <mat-option *ngFor="let category of categories" [value]="category">{{ category }}</mat-option>
+    </mat-select>
     <button class="save" (click)="save()">
       Save to Gallery
     </button>

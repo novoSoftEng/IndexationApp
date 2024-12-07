@@ -11,10 +11,18 @@ export class ImageService {
   constructor(private http: HttpClient) {}
 
   // 1. Upload images
-  uploadImages(files: File[]): Observable<any> {
+  uploadImages(files: File[], category: string | null): Observable<any> {
     const formData: FormData = new FormData();
+    
+    // Append each file to the FormData object
     files.forEach(file => formData.append('images', file, file.name));
-
+    
+    // Append the category if provided
+    if (category) {
+      formData.append('category', category);
+    }
+  
+    // Send the POST request
     return this.http.post<any>(`${this.apiUrl}/upload`, formData);
   }
 

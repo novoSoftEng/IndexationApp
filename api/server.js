@@ -21,12 +21,15 @@ mongoose.connect("mongodb://localhost:27017/imageDB")
 // MongoDB schema and model
 const imageSchema = new mongoose.Schema({
     filename: { type: String, required: true },
+    category : {type : String },
     uploadDate: { type: Date, default: Date.now },
     characteristics: {
       color_histogram: [[Number]], // Array of arrays with numerical values for histogram bins
       dominant_colors: [[Number]], // Array of arrays with RGB values for dominant colors
       texture_descriptors: [Number], // Array of numerical values for texture descriptors
       hu_moments: [Number], // Array of numerical values for Hu moments
+      average_color :[Number] ,
+      edge_histogram :  [Number]
     },
   });
 const Image = mongoose.model("Image", imageSchema);
@@ -62,6 +65,8 @@ app.post("/upload", upload.array("images"), async (req, res) => {
   }
 
   const uploadedFiles = req.files.map((file) => file.originalname);
+  const category = req.body.category;
+  console.log(category);
 
   try {
     // Create a new FormData object to send all files
@@ -95,8 +100,9 @@ app.post("/upload", upload.array("images"), async (req, res) => {
 
     // Save all image metadata and characteristics to MongoDB
     const mongoDocs = Object.entries(imageDocs).map(([filename, characteristics]) => ({
-      filename,
-      characteristics: characteristics,
+      filename,category : category,
+      characteristics: characteristics
+      
     }));
 
     await Image.insertMany(mongoDocs);
