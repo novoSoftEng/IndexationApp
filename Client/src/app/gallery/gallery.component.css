@@ -1,103 +1,46 @@
-/* Styling for the gallery grid */
 .gallery-grid {
-    margin-top: 16px;
-  }
-  
-  .mat-grid-tile {
-    cursor: pointer;
-    position: relative;
-  }
-  
-  .image-container {
-    position: relative;
-    overflow: hidden;
-    border-radius: 8px;
-  }
-  
-  .gallery-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 0.3s ease-in-out;
-    border-radius: 8px;
-  }
-  
-  /* Hover effect to zoom the image */
-  .image-container:hover .gallery-image {
-    transform: scale(1.1);
-  }
-  
-  .image-overlay {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    opacity: 0;
-    transition: opacity 0.3s ease-in-out;
-    color: white;
-    font-size: 24px;
-  }
-  
-  .image-container:hover .image-overlay {
-    opacity: 1;
-  }
-  
-  .mat-grid-tile-footer {
-    background-color: rgba(0, 0, 0, 0.4);
-    color: white;
-    text-align: center;
-    padding: 8px 0;
-    font-weight: bold;
-    border-bottom-left-radius: 8px;
-    border-bottom-right-radius: 8px;
-  }
-  
-  /* Full-screen image in the dialog */
-  .full-screen-image {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    border-radius: 8px;
-    display: block;
-    margin: auto;
-  }
-  
-  .mat-dialog-content {
-    padding: 0;
-  }
-  
-  .mat-dialog-container {
-    border-radius: 12px;
-    overflow: hidden;
-  }
-  
-  /* Responsive design */
-  @media (max-width: 768px) {
-    .mat-grid-list {
-      margin-top: 8px;
-    }
-  
-    .mat-grid-tile {
-      padding: 8px;
-    }
-  
-    .gallery-grid {
-      display: block;
-    }
-  
-    .gallery-image {
-      max-width: 100%;
-      height: auto;
-    }
-  }
-  
-  @media (max-width: 600px) {
-    .mat-grid-list {
-      grid-template-columns: repeat(2, 1fr);
-    }
-  
-    .mat-grid-tile {
-      margin: 8px;
-    }
-  }
-  
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.image-container {
+  position: relative;
+  display: block;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.gallery-image {
+  width: 100%;
+  height: auto;
+  transition: transform 0.3s ease-in-out;
+}
+
+.image-container:hover .gallery-image {
+  transform: scale(1.1);
+}
+
+.image-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+}
+
+.image-container:hover .image-overlay {
+  opacity: 1;
+}
+
+.image-title {
+  text-align: center;
+  font-size: 14px;
+  padding: 8px;
+}
