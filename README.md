@@ -11,7 +11,7 @@
    - Regrouper et organiser les images selon les catégories disponibles dans la base de données d'exemples. ✅  
 
 3. **Ajouter la génération de nouvelles images avec transformations**  
-   - Créer une fonctionnalité backend pour appliquer des transformations (recadrage, changement d’échelle, etc.) sur des images existantes.  
+   - Créer une fonctionnalité backend pour appliquer des transformations (recadrage, changement d’échelle, etc.) sur des images existantes.  ✅  
 
 4. **Développer la recherche d'images similaires**  
    - Implémenter deux méthodes pour la recherche d'images similaires :  
@@ -46,7 +46,7 @@
 
 9. **Concevoir et intégrer deux descripteurs supplémentaires**   ✅  
    - **Statut :** Fait ✅  
-   - Proposer et implémenter deux descripteurs (différents des descripteurs existants) basés sur la couleur, la texture ou la forme.  
+   - Proposer et implémenter deux descripteurs (différents des descripteurs existants) basés sur la couleur, la texture ou la forme.  ✅  
 
 10. **Tester et valider l’ensemble de l’application**  
     - Vérifier la cohérence entre les fonctionnalités backend et frontend.  
