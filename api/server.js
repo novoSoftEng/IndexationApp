@@ -31,7 +31,7 @@ const imageSchema = new mongoose.Schema({
       average_color :[Number] ,
       edge_histogram :  [Number]
     },
-  });
+});
 const Image = mongoose.model("Image", imageSchema);
 
 // Directory for uploaded images
