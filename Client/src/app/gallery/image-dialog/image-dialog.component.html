@@ -1,7 +1,12 @@
 <mat-dialog-content class="dialog-content">
+  <h3>{{data.image}} </h3>
   <div class="image-wrapper">
     <img [src]="data.url" [alt]="data.image" class="full-screen-image" />
   </div>
+
+  <div *ngIf="data.category">
+  <h4>Category : {{data.category}}</h4>
+</div>
 
   <div class="action-buttons">
     <button mat-flat-button class="download" color="primary" (click)="downloadImage()">Download</button>

@@ -27,6 +27,7 @@ export class ImageDialogComponent {
       (d)=>{
         // Extracting characteristics from the response
     this.data.characteristics = d.image[0].characteristics;
+    this.data.category = d.image[0].category;
 
     // Logging the characteristics data
     console.log("Data of characteristics:", this.data.characteristics);
