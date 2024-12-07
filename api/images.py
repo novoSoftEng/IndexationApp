@@ -13,10 +13,10 @@ UPLOAD_FOLDER = '../uploaded_images'
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
-    
+
 # MongoDB Configuration
 MONGO_URI = "mongodb://localhost:27017/"
-DATABASE_NAME = "imgs_indexing"
+DATABASE_NAME = "imageDB"
 COLLECTION_NAME = "images"
 
 client = MongoClient(MONGO_URI)
@@ -322,7 +322,7 @@ class SearchService(Resource):
 # Register API Endpoints
 api.add_resource(DescriptorService, '/calculate-descriptors')
 api.add_resource(TransformService, '/transform')
-api.add_resource(search_similar_images, '/search')
+api.add_resource(SearchService, '/search')
 
 if __name__ == '__main__':
     app.run(debug=True)
