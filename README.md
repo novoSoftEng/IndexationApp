@@ -5,7 +5,7 @@
 1. **Développer une API REST avec Flask**  
    - **Statut :** Partiellement fait  
      - Calculer les descripteurs de contenu (histogrammes de couleurs, couleurs dominantes, descripteurs de texture avec filtres de Gabor, moments de Hu, et deux descripteurs supplémentaires). ✅  
-     - Retourner les résultats sous une forme lisible pour le frontend.  
+     - Retourner les résultats sous une forme lisible pour le frontend.  ✅ 
 
 2. **Implémenter la logique pour organiser les images**   ✅  
    - Regrouper et organiser les images selon les catégories disponibles dans la base de données d'exemples. ✅  
@@ -25,7 +25,7 @@
 5. **Créer l'interface utilisateur pour la gestion des images**  
    - **Statut :** Partiellement fait  
      - Charger (upload), télécharger (download), et supprimer une image ou un ensemble d'images. ✅  
-     - Intégrer une interface pour organiser les images selon leurs catégories. 
+     - Intégrer une interface pour organiser les images selon leurs catégories. ✅ 
 
 6. **Ajouter une interface pour la création d’images transformées**  
    - Intégrer une interface utilisateur permettant d'appliquer des transformations sur des images existantes et de visualiser les résultats.  

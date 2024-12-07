@@ -1,45 +1,40 @@
 <mat-dialog-content class="dialog-content">
+  <h3>{{data.image}} </h3>
   <div class="image-wrapper">
     <img [src]="data.url" [alt]="data.image" class="full-screen-image" />
   </div>
+
+  <div *ngIf="data.category">
+  <h4>Category : {{data.category}}</h4>
+</div>
 
   <div class="action-buttons">
     <button mat-flat-button class="download" color="primary" (click)="downloadImage()">Download</button>
     <button mat-flat-button class="delete" color="warn" (click)="deleteImage()">Delete</button>
   </div>
 
-  <!-- Accordion Section for Image Characteristics -->
-  <mat-accordion>
-    <mat-expansion-panel>
-      <mat-expansion-panel-header>
-        <mat-panel-title>Image Characteristics</mat-panel-title>
-      </mat-expansion-panel-header>
-
+<div>
+        <h2>Image Characteristics</h2>
+  
       <div class="characteristics-container">
         <!-- Color Histogram Graph -->
-        <div *ngIf="data.characteristics?.color_histogram">
+        <div *ngIf="data.characteristics?.color_histogram" class="graphs">
           <h3>Color Histogram</h3>
           <canvas id="color-histogram-canvas"></canvas>
         </div>
-
+  
         <!-- Dominant Colors Graph -->
-        <div *ngIf="data.characteristics?.dominant_colors">
+        <div *ngIf="data.characteristics?.dominant_colors" class="graphs">
           <h3>Dominant Colors</h3>
           <canvas id="dominant-colors-canvas"></canvas>
         </div>
+        <canvas id="texture-descriptors-canvas" width="400" height="200"></canvas>
+        <div id="average-color-display" style="width: 200px; height: 200px; border: 1px solid #000;"></div>
 
-        <!-- Texture Descriptors -->
-        <div *ngIf="data.characteristics?.texture_descriptors">
-          <h3>Texture Descriptors</h3>
-          <pre>{{ data.characteristics.texture_descriptors | json }}</pre>
-        </div>
+<canvas id="hu-moments-canvas" width="400" height="200"></canvas>
+<canvas id="edge-histogram-canvas" width="400" height="200"></canvas>
 
-        <!-- Hu Moments -->
-        <div *ngIf="data.characteristics?.hu_moments">
-          <h3>Hu Moments</h3>
-          <pre>{{ data.characteristics.hu_moments | json }}</pre>
-        </div>
       </div>
-    </mat-expansion-panel>
-  </mat-accordion>
+    </div>
+  
 </mat-dialog-content>
