@@ -7,8 +7,8 @@
      - Calculer les descripteurs de contenu (histogrammes de couleurs, couleurs dominantes, descripteurs de texture avec filtres de Gabor, moments de Hu, et deux descripteurs supplémentaires). ✅  
      - Retourner les résultats sous une forme lisible pour le frontend.  
 
-2. **Implémenter la logique pour organiser les images**  
-   - Regrouper et organiser les images selon les catégories disponibles dans la base de données d'exemples.
+2. **Implémenter la logique pour organiser les images**   ✅  
+   - Regrouper et organiser les images selon les catégories disponibles dans la base de données d'exemples. ✅  
 
 3. **Ajouter la génération de nouvelles images avec transformations**  
    - Créer une fonctionnalité backend pour appliquer des transformations (recadrage, changement d’échelle, etc.) sur des images existantes.  
