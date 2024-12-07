@@ -6,10 +6,7 @@ import { MatDialogModule ,MAT_DIALOG_DATA,
   MatDialogContent,
   MatDialogRef,
   MatDialogTitle } from '@angular/material/dialog';
-import { GalleryComponent } from '../gallery.component';
 import { ImageService } from '../../Services/image.service';
-import {CdkAccordionModule} from '@angular/cdk/accordion';
-import {MatExpansionModule} from '@angular/material/expansion';
 import { CommonModule } from '@angular/common';
 import {
   Chart,
@@ -47,6 +44,10 @@ export class ImageDialogComponent implements AfterViewInit {
       if (this.data.characteristics.dominant_colors) {
         setTimeout(() => this.createDominantColorsChart(), 0);
       }
+      setTimeout(() =>this.showAverageColor(), 0);
+      setTimeout(() =>this.createHuMomentsChart(), 0);
+      setTimeout(() =>this.createEdgeHistogramChart(), 0);
+      setTimeout(() =>this.createTextureDescriptorsChart(), 0);
     });
   }
 
@@ -163,4 +164,145 @@ export class ImageDialogComponent implements AfterViewInit {
   onNoClick(): void {
     this.dialogRef.close();
   }
+   showAverageColor() {
+    // Assuming average_color is an array of numbers representing RGB components
+    const { average_color } = this.data.characteristics;
+  
+    if (average_color && average_color.length === 3) {
+      // Extract RGB values
+      const [r, g, b] = average_color;
+  
+      // Create a CSS color string from RGB values
+      const colorString = `rgb(${r}, ${g}, ${b})`;
+  
+      // Get the target div element
+      const colorDisplay = document.getElementById('average-color-display') as HTMLDivElement;
+  
+      if (colorDisplay) {
+        // Apply the color to the div background
+        colorDisplay.style.backgroundColor = colorString;
+      } else {
+        console.error('Element with ID "average-color-display" not found.');
+      }
+    } else {
+      console.error('Invalid average_color data.');
+    }
+  }
+  
+  createHuMomentsChart() {
+    const huMoments = this.data.characteristics.hu_moments;
+    const labels = Array.from({ length: huMoments.length }, (_, i) => `Moment ${i + 1}`);
+  
+    const canvas = document.getElementById('hu-moments-canvas') as HTMLCanvasElement;
+    if (canvas) {
+      new Chart(canvas, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Hu Moments',
+              data: huMoments,
+              backgroundColor: 'rgba(75, 192, 192, 0.5)',
+              borderColor: 'rgba(75, 192, 192, 1)',
+              borderWidth: 1,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: 'Value',
+              },
+            },
+          },
+        },
+      });
+    } else {
+      console.error('Canvas for Hu Moments chart not found.');
+    }
+  }
+  
+   createEdgeHistogramChart() {
+    const edgeHistogram = this.data.characteristics.edge_histogram;
+    const labels = Array.from({ length: edgeHistogram.length }, (_, i) => `Bin ${i + 1}`);
+  
+    const canvas = document.getElementById('edge-histogram-canvas') as HTMLCanvasElement;
+    if (canvas) {
+      new Chart(canvas, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Edge Histogram',
+              data: edgeHistogram,
+              backgroundColor: 'rgba(153, 102, 255, 0.5)',
+              borderColor: 'rgba(153, 102, 255, 1)',
+              borderWidth: 1,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: 'Frequency',
+              },
+            },
+          },
+        },
+      });
+    } else {
+      console.error('Canvas for Edge Histogram chart not found.');
+    }
+  }
+  
+   createTextureDescriptorsChart() {
+    const textureDescriptors = this.data.characteristics.texture_descriptors;
+    const labels = Array.from({ length: textureDescriptors.length }, (_, i) => `Descriptor ${i + 1}`);
+  
+    const canvas = document.getElementById('texture-descriptors-canvas') as HTMLCanvasElement;
+    if (canvas) {
+      new Chart(canvas, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Texture Descriptors',
+              data: textureDescriptors,
+              backgroundColor: 'rgba(255, 159, 64, 0.5)',
+              borderColor: 'rgba(255, 159, 64, 1)',
+              borderWidth: 1,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: 'Value',
+              },
+            },
+          },
+        },
+      });
+    } else {
+      console.error('Canvas for Texture Descriptors chart not found.');
+    }
+  }
 }
+  
+  
+
