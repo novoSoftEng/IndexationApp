@@ -15,7 +15,7 @@
 
 4. **Développer la recherche d'images similaires**  
    - Implémenter deux méthodes pour la recherche d'images similaires :  
-     - Recherche simple.  
+     - Recherche simple.  ✅ 
      - Recherche avec retour de pertinence.  
 
 ---
