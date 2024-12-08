@@ -1,1 +1,36 @@
-<p>image-transform works!</p>
+<div class="transform-container">
+  <h2>Live Image Transformation</h2>
+
+  <!-- Upload Section -->
+  <div>
+    <label for="image-upload">Upload Image:</label>
+    <input type="file" id="image-upload" (change)="onImageSelect($event)" accept="image/*" />
+  </div>
+
+  <!-- Transformation Parameters -->
+  <div class="parameters">
+    <h3>Transformations</h3>
+    <label>Crop Coords (x, y, w, h):</label>
+    <input type="text" [(ngModel)]="cropCoords" (input)="applyTransform()" placeholder="e.g., 10,10,100,100" />
+
+    <label>Resize Dimensions (width, height):</label>
+    <input type="text" [(ngModel)]="resizeDims" (input)="applyTransform()" placeholder="e.g., 200,200" />
+
+    <label>Flip:</label>
+    <select [(ngModel)]="flip" (change)="applyTransform()">
+      <option value="">None</option>
+      <option value="0">Vertical</option>
+      <option value="1">Horizontal</option>
+      <option value="-1">Both</option>
+    </select>
+
+    <label>Rotate Angle:</label>
+    <input type="number" [(ngModel)]="rotateAngle" (input)="applyTransform()" placeholder="e.g., 90" />
+  </div>
+
+  <!-- Preview Section -->
+  <div class="preview">
+    <h3>Preview</h3>
+    <img *ngIf="transformedImageUrl" [src]="transformedImageUrl" alt="Transformed Image" />
+  </div>
+</div>
