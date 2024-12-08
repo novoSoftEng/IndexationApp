@@ -17,7 +17,7 @@
                 <p><strong>Filename:</strong> {{ result.filename }}</p>
               </div>
               <div *ngIf="result.image" class="result-image">
-                <img [src]="getImageSrc(result.image)" alt="{{ result.filename }}" />
+                <img [src]="result.image" alt="{{ result.filename }}" />
               </div>
             </div>
           </div>

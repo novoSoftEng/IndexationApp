@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { map, Observable } from 'rxjs';
+import { catchError, map, Observable, throwError } from 'rxjs';
 import { environment } from '../environment';
 import { SearchResults } from '../interfaces/search-results';
 @Injectable({
@@ -28,12 +28,13 @@ export class ImageService {
     return this.http.post<any>(`${this.apiUrl}/upload`, formData);
   }
 
-  // 2. Download a specific file (by filename)
-  downloadFile(filename: string): Observable<Blob> {
-    return this.http.get(`${this.apiUrl}/download/${filename}`, {
-      responseType: 'blob'
+// 2. Download a specific file (by filename)
+downloadFile(filename: string): Observable<Blob> {
+  return this.http.get(`${this.apiUrl}/download/${filename}`, {
+    responseType: 'blob'  // Ensure the response is of type Blob
     });
-  }
+}
+
 
   // 3. Delete a specific file (by filename)
   deleteFile(filename: string): Observable<any> {
@@ -47,7 +48,7 @@ export class ImageService {
 
   // 5. Get a specific image (by filename)
   getImage(filename: string): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/dowload/${filename}`);
+    return this.http.get<any>(`${this.apiUrl}/download/${filename}`);
   }
   getAllImagesDetails(): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/images`);
@@ -60,6 +61,7 @@ export class ImageService {
     
     // Append each file to the FormData object
     formData.append('image', file, file.name);
+    console.log(formData);
     
     return this.http.post<any>(`${this.searchApi}/search`, formData);
   }

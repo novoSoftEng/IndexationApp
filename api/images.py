@@ -8,7 +8,7 @@ from rich import _console
 from werkzeug.utils import secure_filename
 from scipy.spatial.distance import euclidean
 from dotenv import load_dotenv
-
+from flask_cors import CORS
 load_dotenv()
 
 # MongoDB Configuration
@@ -30,7 +30,7 @@ collection = db[COLLECTION_NAME]
 
 app = Flask(__name__)
 api = Api(app)
-
+CORS(app)
 
 def transform_image(image_path, crop_coords=None, resize_dims=None, flip=None, rotate_angle=None):
     """
@@ -309,7 +309,7 @@ class SearchService(Resource):
             top_similar = simple_search(query_descriptor, descriptors2)
 
             # Return results
-            return {"top_similar": top_similar}, 200
+            return top_similar, 200
 
         except Exception as e:
             return {"error": str(e)}, 500
