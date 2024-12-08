@@ -1,0 +1,37 @@
+<mat-tab-group>
+    <mat-tab label="Simple Search"> 
+        <h2>Image Upload</h2>
+        <div class="list" (dragover)="onDragOver($event)" (drop)="onFileDrop($event)">
+            <div class="upload-area" (click)="fileInput.click()">
+              <input type="file" hidden (change)="onFileSelect($event)" #fileInput>
+              <p>Drag & drop your image here or click to upload</p>
+            </div>
+            <div class="list-item" *ngIf="image">
+              <img [src]="image.preview" alt="Preview" class="preview-image" />
+            </div>
+        </div>
+        <div *ngIf="results.length > 0" class="results-container">
+            <div *ngFor="let result of results" class="result-item">
+              <div class="result-info">
+                <p><strong>Score:</strong> {{ result.score }}</p>
+                <p><strong>Filename:</strong> {{ result.filename }}</p>
+              </div>
+              <div *ngIf="result.image" class="result-image">
+                <img [src]="getImageSrc(result.image)" alt="{{ result.filename }}" />
+              </div>
+            </div>
+          </div>
+          
+          <div *ngIf="!results?.length" class="no-results">
+            <p>No results found.</p>
+          </div>
+          
+        
+          
+   
+
+
+    </mat-tab>
+    <mat-tab label="Recherche pertinence"> complicated </mat-tab>
+</mat-tab-group>
+  

@@ -2,11 +2,13 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { map, Observable } from 'rxjs';
 import { environment } from '../environment';
+import { SearchResults } from '../interfaces/search-results';
 @Injectable({
   providedIn: 'root'
 })
 export class ImageService {
   private apiUrl = `${environment.apiUrl}`;  // Assuming the backend is hosted at apiUrl
+  private searchApi = `${environment.searchApi}`;
 
   constructor(private http: HttpClient) {}
 
@@ -52,5 +54,13 @@ export class ImageService {
   }
   getImageDetails(filename: string): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/images/${filename}`);
+  }
+  Search(file: File) : Observable<SearchResults[]> {
+    const formData: FormData = new FormData();
+    
+    // Append each file to the FormData object
+    formData.append('image', file, file.name);
+    
+    return this.http.post<any>(`${this.searchApi}/search`, formData);
   }
 }
