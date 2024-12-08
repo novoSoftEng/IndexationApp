@@ -4,6 +4,7 @@ import numpy as np
 from flask import Flask, request, jsonify, Response
 from pymongo import MongoClient
 from flask_restful import Api, Resource
+from rich import _console
 from werkzeug.utils import secure_filename
 from scipy.spatial.distance import euclidean
 
@@ -16,7 +17,7 @@ if not os.path.exists(UPLOAD_FOLDER):
 
 # MongoDB Configuration
 MONGO_URI = "mongodb://localhost:27017/"
-DATABASE_NAME = "imageDB"
+DATABASE_NAME = "img_indexing"
 COLLECTION_NAME = "images"
 
 client = MongoClient(MONGO_URI)
@@ -170,46 +171,13 @@ def simple_search(img_descriptor, descriptors2, top_n=5):
         )
 
         # Combine distances into a single similarity score
-        total_distance = (
-            w1 * frame_dist +
-            w2 * color_dist +
-            w3 * texture_dist
-        )
-        similarities.append((img2_name, total_distance))
+        total_distance = w1 * frame_dist + w2 * color_dist + w3 * texture_dist
+        similarities.append({'filename': img2_name, 'score' :total_distance})
 
     # Sort by similarity (ascending order) and take the top N
-    top_similar = sorted(similarities, key=lambda x: x[1])[:top_n]
+    top_similar = sorted(similarities, key=lambda x: x['score'])[:top_n]
 
     return top_similar
-
-
-def search_similar_images():
-    try:
-        # Check if an image is uploaded
-        if "image" not in request.files:
-            return jsonify({"error": "Image file is required"}), 400
-
-        # Read the image from the request
-        file = request.files["image"]
-        image = cv2.imdecode(np.frombuffer(file.read(), np.uint8), cv2.IMREAD_COLOR)
-
-        if image is None:
-            return jsonify({"error": "Invalid image file"}), 400
-
-        # Calculate descriptors for the uploaded image
-        query_descriptor = calculate_img_descriptors(image)
-
-        # Fetch all descriptors from MongoDB
-        descriptors2 = list(collection.find({}, {"filename": 1, "characteristics": 1}))
-
-        # Perform the search
-        top_similar = simple_search(query_descriptor, descriptors2)
-
-        # Return results
-        return jsonify({"top_similar": top_similar}), 200
-
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
 
 
 # Resource classes for API
@@ -313,10 +281,35 @@ class DescriptorService(Resource):
 
         return jsonify({"message": "Descriptors calculated", "results": results})
 
-# RESTful resource
+
 class SearchService(Resource):
     def post(self):
-        return search_similar_images()
+        try:
+            # Check if an image is uploaded
+            if "image" not in request.files:
+                return {"error": "Image file is required"}, 400
+
+            # Read the image from the request
+            file = request.files["image"]
+            image = cv2.imdecode(np.frombuffer(file.read(), np.uint8), cv2.IMREAD_COLOR)
+
+            if image is None:
+                return {"error": "Invalid image file"}, 400
+
+            # Calculate descriptors for the uploaded image
+            query_descriptor = calculate_img_descriptors(image)
+
+            # Fetch all descriptors from MongoDB
+            descriptors2 = list(collection.find({}, {"filename": 1, "characteristics": 1}))
+
+            # Perform the search
+            top_similar = simple_search(query_descriptor, descriptors2)
+
+            # Return results
+            return {"top_similar": top_similar}, 200
+
+        except Exception as e:
+            return {"error": str(e)}, 500
 
 
 # Register API Endpoints
