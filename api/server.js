@@ -10,12 +10,19 @@ const app = express();
 const cors = require('cors');
 app.use(cors());
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
-const PORT = 5500;
-const ImagesService = "127.0.0.1:5000";
-// MongoDB connection
-mongoose.connect("mongodb://localhost:27017/imageDB")
+// Load environment variables
+require('dotenv').config();
+
+// Access environment variables
+const PORT = process.env.PORT;
+const ImagesService = process.env.IMAGES_SERVICE;
+const mongoUri = process.env.MONGO_URI;
+
+
+mongoose.connect(mongoUri)
   .then(() => console.log("MongoDB connected"))
   .catch((err) => console.error("MongoDB connection error:", err));
+
 
 
 // MongoDB schema and model
@@ -100,7 +107,8 @@ app.post("/upload", upload.array("images"), async (req, res) => {
 
     // Save all image metadata and characteristics to MongoDB
     const mongoDocs = Object.entries(imageDocs).map(([filename, characteristics]) => ({
-      filename,category : category,
+      filename,
+      category : category,
       characteristics: characteristics
       
     }));

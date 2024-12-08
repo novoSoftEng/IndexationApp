@@ -7,18 +7,21 @@ from flask_restful import Api, Resource
 from rich import _console
 from werkzeug.utils import secure_filename
 from scipy.spatial.distance import euclidean
+from dotenv import load_dotenv
 
+load_dotenv()
 
+# MongoDB Configuration
+MONGO_URI =  os.getenv('MONGO_URI')
+DATABASE_NAME = os.getenv('DATABASE_NAME')
+COLLECTION_NAME =os.getenv('COLLECTION_NAME')
 # Directory to store uploaded images
 UPLOAD_FOLDER = '../uploaded_images'
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
 
-# MongoDB Configuration
-MONGO_URI = "mongodb://localhost:27017/"
-DATABASE_NAME = "img_indexing"
-COLLECTION_NAME = "images"
+
 
 client = MongoClient(MONGO_URI)
 db = client[DATABASE_NAME]
