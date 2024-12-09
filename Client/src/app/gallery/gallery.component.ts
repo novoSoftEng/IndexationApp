@@ -17,6 +17,7 @@ import { forkJoin, map, switchMap } from 'rxjs';
 })
 export class GalleryComponent {
 images: any;
+  dialogRef: any;
 constructor(public dialog: MatDialog, private imageService: ImageService) {
   this.imageService.getAllImages().pipe(
     map((response: { images: string[] }) => response.images), // Extract the images array
@@ -38,12 +39,22 @@ constructor(public dialog: MatDialog, private imageService: ImageService) {
   });
 }
 
-
+delete(deletedImage: any): void {
+  console.log('Image deleted in parent:', deletedImage);
+  // Update the DOM or perform other actions
+  this.images = this.images.filter((img: any) => img.image !== deletedImage.image);
+  console.log(this.images);
+}
   openDialog(image: any): void {
-    this.dialog.open(ImageDialogComponent, {
+   this.dialogRef =  this.dialog.open(ImageDialogComponent, {
       width: '80%',
       height: '80%',
       data: image
+    });
+    this.dialogRef.afterClosed().subscribe((result: any) => {
+      if (result?.action === 'delete') {
+        this.delete(result);
+      }
     });
   }
 

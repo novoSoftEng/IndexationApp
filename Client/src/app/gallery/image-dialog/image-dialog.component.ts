@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, inject, Input, model } from '@angular/core';
+import { AfterViewInit, Component, EventEmitter, inject, Input, model, Output, Type } from '@angular/core';
 import { MatDialogModule ,MAT_DIALOG_DATA,
   MatDialog,
   MatDialogActions,
@@ -26,6 +26,8 @@ Chart.register(...registerables);
 export class ImageDialogComponent implements AfterViewInit {
   readonly dialogRef = inject(MatDialogRef<ImageDialogComponent>);
   readonly data = inject<any>(MAT_DIALOG_DATA);
+  @Output() deleted = new EventEmitter<any>();
+
 
   constructor(private imageService: ImageService) {}
 
@@ -158,6 +160,7 @@ export class ImageDialogComponent implements AfterViewInit {
     this.imageService.deleteFile(this.data.image).subscribe((msg) => {
       console.log('Image deleted:', msg.message);
     });
+    this.deleted.emit(this.data);
     this.dialogRef.close({ action: 'delete', image: this.data.image });
   }
 
