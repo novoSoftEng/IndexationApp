@@ -49,6 +49,7 @@ export class UploadComponent {
   }
   // Handles drag-and-drop reordering within the upload queue
   drop(event: CdkDragDrop<upload[]>): void {
+    
     moveItemInArray(this.uploadQueue, event.previousIndex, event.currentIndex);
   }
 

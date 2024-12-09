@@ -19,27 +19,33 @@ const ImagesService = process.env.IMAGES_SERVICE;
 const mongoUri = process.env.MONGO_URI;
 
 
-mongoose.connect(mongoUri)
+mongoose.set('debug', true);
+mongoose.connect(process.env.MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  dbName: process.env.DATABASE_NAME, // Ensure the correct database is selected
+})
   .then(() => console.log("MongoDB connected"))
   .catch((err) => console.error("MongoDB connection error:", err));
 
 
-
 // MongoDB schema and model
 const imageSchema = new mongoose.Schema({
-    filename: { type: String, required: true },
-    category : {type : String },
-    uploadDate: { type: Date, default: Date.now },
-    characteristics: {
-      color_histogram: [[Number]], // Array of arrays with numerical values for histogram bins
-      dominant_colors: [[Number]], // Array of arrays with RGB values for dominant colors
-      texture_descriptors: [Number], // Array of numerical values for texture descriptors
-      hu_moments: [Number], // Array of numerical values for Hu moments
-      average_color :[Number] ,
-      edge_histogram :  [Number]
-    },
+  filename: { type: String, required: true },
+  category : {type : String },
+  uploadDate: { type: Date, default: Date.now },
+  characteristics: {
+    color_histogram: [[Number]], // Array of arrays with numerical values for histogram bins
+    dominant_colors: [[Number]], // Array of arrays with RGB values for dominant colors
+    texture_descriptors: [Number], // Array of numerical values for texture descriptors
+    hu_moments: [Number], // Array of numerical values for Hu moments
+    average_color :[Number] ,
+    edge_histogram :  [Number]
+  },
 });
 const Image = mongoose.model("Image", imageSchema);
+
+
 
 // Directory for uploaded images
 const UPLOAD_FOLDER = path.join(__dirname, "uploaded_images");
@@ -112,8 +118,13 @@ app.post("/upload", upload.array("images"), async (req, res) => {
       characteristics: characteristics
       
     }));
-
-    await Image.insertMany(mongoDocs);
+    try {
+      const savedDocs = await Image.insertMany(mongoDocs);
+      console.log("Documents successfully saved:", savedDocs);
+    } catch (saveError) {
+      console.error("Error during insertMany:", saveError);
+    }
+    
 
     res.status(201).json({ message: "Images uploaded and processed successfully", files: uploadedFiles, results: imageDocs });
   } catch (error) {
