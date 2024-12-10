@@ -9,6 +9,10 @@
             <div class="list-item" *ngIf="image">
               <img [src]="image.preview" alt="Preview" class="preview-image" />
             </div>
+            
+        </div>
+        <div *ngIf="likedIds.size > 0">
+          <button mat-button color="primary" (click)="Search()">Recherche Pertinence</button>
         </div>
         <div *ngIf="results.length > 0" class="results-container">
           <mat-card *ngFor="let result of results" class="result-card">
@@ -24,6 +28,18 @@
         
             <mat-card-actions>
               <button mat-button color="primary" (click)="downloadImage(result)">Download</button>
+              <!-- Full Like Button -->
+              <!-- Full Like Button -->
+              <button mat-button color="primary" (click)="toggleLike(result)" *ngIf="isLiked(result)">
+                <mat-icon>thumb_up</mat-icon> Liked
+              </button>
+
+              <!-- Empty Like Button -->
+              <button mat-button color="accent" (click)="toggleLike(result)" *ngIf="!isLiked(result)">
+                <mat-icon>thumb_up_off_alt</mat-icon> Like
+              </button>
+
+
             </mat-card-actions>
           </mat-card>
         </div>

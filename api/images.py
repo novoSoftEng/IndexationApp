@@ -10,6 +10,7 @@ from scipy.spatial.distance import euclidean
 from dotenv import load_dotenv
 from flask_cors import CORS
 import random
+import json
 load_dotenv()
 
 # MongoDB Configuration
@@ -437,7 +438,7 @@ class SearchService(Resource):
 
             if "characteristics" in request.form:
                 # Extract relevant and irrelevant descriptors from the request
-                characteristics = request.form.get("characteristics")
+                characteristics = json.loads( request.form.get("characteristics"))
                 relevant_descriptors = characteristics.get("relevant", [])
                 irrelevant_descriptors = characteristics.get("irrelevant", [])
 

@@ -56,11 +56,14 @@ downloadFile(filename: string): Observable<Blob> {
   getImageDetails(filename: string): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/images/${filename}`);
   }
-  Search(file: File) : Observable<SearchResults[]> {
+  Search(file: File,characteristics?:any) : Observable<SearchResults[]> {
     const formData: FormData = new FormData();
     
     // Append each file to the FormData object
     formData.append('image', file, file.name);
+    if(characteristics){
+      formData.append('characteristics',JSON.stringify(characteristics))
+    }
     console.log(formData);
     
     return this.http.post<any>(`${this.searchApi}/search`, formData);
