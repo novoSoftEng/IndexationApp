@@ -1,6 +1,4 @@
-<mat-tab-group>
-    <mat-tab label="Simple Search"> 
-        <h2>Image Upload</h2>
+
         <div class="list" (dragover)="onDragOver($event)" (drop)="onFileDrop($event)">
             <div class="upload-area" (click)="fileInput.click()">
               <input type="file" hidden (change)="onFileSelect($event)" #fileInput>
@@ -54,7 +52,3 @@
    
 
 
-    </mat-tab>
-    <mat-tab label="Recherche pertinence"> complicated </mat-tab>
-</mat-tab-group>
-  
