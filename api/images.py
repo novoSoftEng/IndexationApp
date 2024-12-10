@@ -87,6 +87,7 @@ def calculate_color_histogram(image):
 
 def calculate_dominant_colors(image, k=3):
     """Calculate dominant colors using k-means clustering."""
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     pixels = image.reshape((-1, 3))
     pixels = np.float32(pixels)
 
@@ -277,11 +278,8 @@ class DescriptorService(Resource):
             # Read image using OpenCV
             image_bytes = np.frombuffer(image_file.read(), np.uint8)
             image = cv2.imdecode(image_bytes, cv2.IMREAD_COLOR)
+
             # Convert the image from BGR to RGB
-            if image is not None and len(image.shape) == 3:
-                image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-            else:
-                raise ValueError("Failed to load image or image is not in correct format.")
 
             if image is None:
                 results[image_file.filename] = {"error": "Invalid image format"}
@@ -314,7 +312,7 @@ class SearchService(Resource):
             descriptors2 = list(collection.find({}))
 
             # Perform the search
-            top_similar = simple_search(query_descriptor, descriptors2)
+            top_similar = simple_search(query_descriptor, descriptors2, top_n=10)
 
             # Return results
             return top_similar, 200
