@@ -24,3 +24,22 @@
     border-radius: 10px;
   }
   
+  .results-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 16px;
+    margin: 16px;
+  }
+  
+  .result-card {
+    width: 300px;
+  }
+  
+  .result-img {
+    width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+  }
+  

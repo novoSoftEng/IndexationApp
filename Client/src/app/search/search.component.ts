@@ -5,10 +5,12 @@ import {MatTabsModule} from '@angular/material/tabs';
 import { SearchResults } from '../interfaces/search-results';
 import { switchMap, map, forkJoin } from 'rxjs';
 import { ImageService } from '../Services/image.service';
+import { MatButtonModule } from '@angular/material/button';
+import {MatCardModule} from '@angular/material/card';
 @Component({
   selector: 'app-search',
   standalone: true,
-  imports: [CommonModule,MatTabsModule,DragDropModule],
+  imports: [CommonModule,MatTabsModule,DragDropModule,MatCardModule, MatButtonModule],
   templateUrl: './search.component.html',
   styleUrl: './search.component.css'
 })
@@ -17,7 +19,12 @@ export class SearchComponent {
   }
   image: { file: File; preview: string } | null = null;
   results: SearchResults[]=[];
-  
+  downloadImage(result:any): void {
+    const link = document.createElement('a');
+    link.href = result.image;
+    link.download = result.filename;
+    link.click();
+  }
 
   onFileSelect(event: Event): void {
     const input = event.target as HTMLInputElement;
