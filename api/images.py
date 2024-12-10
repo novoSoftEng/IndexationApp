@@ -156,8 +156,13 @@ def simple_search(img_descriptor, descriptors2, top_n=5):
     similarities = []
 
     for img2 in descriptors2:
-        img2_name = img2["filename"]
-        img2_desc = img2["characteristics"]
+        try:
+            img2_name = img2["filename"]
+            img2_desc = img2["characteristics"]
+
+            img2_cat = img2["category"]
+        except Exception as e:
+            return {"error": str(e)}, 500
 
         # Calculate group-level distances
         frame_dist = euclidean(
@@ -175,7 +180,7 @@ def simple_search(img_descriptor, descriptors2, top_n=5):
 
         # Combine distances into a single similarity score
         total_distance = w1 * frame_dist + w2 * color_dist + w3 * texture_dist
-        similarities.append({'filename': img2_name, 'score' :total_distance})
+        similarities.append({'filename': img2_name, 'score' :total_distance,'category':img2_cat })
 
     # Sort by similarity (ascending order) and take the top N
     top_similar = sorted(similarities, key=lambda x: x['score'])[:top_n]
@@ -303,7 +308,7 @@ class SearchService(Resource):
             query_descriptor = calculate_img_descriptors(image)
 
             # Fetch all descriptors from MongoDB
-            descriptors2 = list(collection.find({}, {"filename": 1, "characteristics": 1}))
+            descriptors2 = list(collection.find({}))
 
             # Perform the search
             top_similar = simple_search(query_descriptor, descriptors2)

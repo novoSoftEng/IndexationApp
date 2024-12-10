@@ -32,7 +32,7 @@
 7. **Développer une interface utilisateur pour les descripteurs et les requêtes**  
    - Afficher sous une forme convenable les descripteurs calculés pour une image donnée.   ✅ 
    - Permettre à l'utilisateur :  
-     - De sélectionner une image requête.  
+     - De sélectionner une image requête.  ✅
      - De visualiser les résultats de recherche d’images similaires (recherche simple et avec retour de pertinence).  
 
 8. **Améliorer l’ergonomie et l’expérience utilisateur (UX/UI)**  
