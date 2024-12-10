@@ -49,6 +49,13 @@ const Image = mongoose.model("Image", imageSchema);
 
 // Directory for uploaded images
 const UPLOAD_FOLDER = path.join(__dirname, "uploaded_images");
+// Check if the folder exists, create it if not
+if (!fs.existsSync(UPLOAD_FOLDER)) {
+  fs.mkdirSync(UPLOAD_FOLDER, { recursive: true }); // Ensure all intermediate directories are created
+  console.log(`Folder created at: ${UPLOAD_FOLDER}`);
+} else {
+  console.log(`Folder already exists at: ${UPLOAD_FOLDER}`);
+}
 fs.ensureDirSync(UPLOAD_FOLDER);
 
 // Multer setup for file uploads
