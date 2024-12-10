@@ -264,28 +264,19 @@ class DescriptorService(Resource):
             # Read image using OpenCV
             image_bytes = np.frombuffer(image_file.read(), np.uint8)
             image = cv2.imdecode(image_bytes, cv2.IMREAD_COLOR)
+            # Convert the image from BGR to RGB
+            if image is not None and len(image.shape) == 3:
+                image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            else:
+                raise ValueError("Failed to load image or image is not in correct format.")
 
             if image is None:
                 results[image_file.filename] = {"error": "Invalid image format"}
                 continue
 
-            # Calculate descriptors
-            color_histogram = calculate_color_histogram(image)
-            dominant_colors = calculate_dominant_colors(image)
-            texture_descriptors = calculate_texture_descriptors(image)  # Should use Gabor filters
-            hu_moments = calculate_hu_moments(image)
-            average_color = calculate_average_color(image)  # New color descriptor
-            edge_histogram = calculate_edge_histogram(image)  # New texture/shape descriptor
 
             # Store results
-            results[image_file.filename] = {
-                "color_histogram": color_histogram,
-                "dominant_colors": dominant_colors,
-                "texture_descriptors": texture_descriptors,
-                "hu_moments": hu_moments,
-                "average_color": average_color,
-                "edge_histogram": edge_histogram,
-            }
+            results[image_file.filename] = calculate_img_descriptors(image)
 
         return jsonify({"message": "Descriptors calculated", "results": results})
 
