@@ -2,35 +2,80 @@
   <h2>Live Image Transformation</h2>
 
   <!-- Upload Section -->
-  <div>
+  <div class="upload-section">
     <label for="image-upload">Upload Image:</label>
-    <input type="file" id="image-upload" (change)="onImageSelect($event)" accept="image/*" />
+    <input
+      type="file"
+      id="image-upload"
+      (change)="onImageSelect($event)"
+      accept="image/*"
+    />
   </div>
 
   <!-- Transformation Parameters -->
   <div class="parameters">
     <h3>Transformations</h3>
-    <label>Crop Coords (x, y, w, h):</label>
-    <input type="text" [(ngModel)]="cropCoords" (input)="applyTransform()" placeholder="e.g., 10,10,100,100" />
 
-    <label>Resize Dimensions (width, height):</label>
-    <input type="text" [(ngModel)]="resizeDims" (input)="applyTransform()" placeholder="e.g., 200,200" />
+    <!-- Crop Coordinates -->
+    <div class="parameter-group">
+      <label for="crop-coords">Crop Coords (x, y, w, h):</label>
+      <input
+        type="text"
+        id="crop-coords"
+        [(ngModel)]="cropCoords"
+        (input)="applyTransform()"
+        placeholder="e.g., 10,10,100,100"
+      />
+    </div>
 
-    <label>Flip:</label>
-    <select [(ngModel)]="flip" (change)="applyTransform()">
-      <option value="">None</option>
-      <option value="0">Vertical</option>
-      <option value="1">Horizontal</option>
-      <option value="-1">Both</option>
-    </select>
+    <!-- Resize Dimensions -->
+    <div class="parameter-group">
+      <label for="resize-dims">Resize Dimensions (width, height):</label>
+      <input
+        type="text"
+        id="resize-dims"
+        [(ngModel)]="resizeDims"
+        (input)="applyTransform()"
+        placeholder="e.g., 200,200"
+      />
+    </div>
 
-    <label>Rotate Angle:</label>
-    <input type="number" [(ngModel)]="rotateAngle" (input)="applyTransform()" placeholder="e.g., 90" />
+    <!-- Flip Option -->
+    <div class="parameter-group">
+      <label for="flip">Flip:</label>
+      <select id="flip" [(ngModel)]="flip" (change)="applyTransform()">
+        <option value="">None</option>
+        <option value="0">Vertical</option>
+        <option value="1">Horizontal</option>
+        <option value="-1">Both</option>
+      </select>
+    </div>
+
+    <!-- Rotation Angle -->
+    <div class="parameter-group">
+      <label for="rotate-angle">Rotate Angle:</label>
+      <input
+        type="number"
+        id="rotate-angle"
+        [(ngModel)]="rotateAngle"
+        placeholder="e.g., 90"
+      />
+    </div>
+
+    <!-- Apply Transform Button -->
+    <div class="parameter-group">
+      <button (click)="applyTransform()">Apply Transform</button>
+    </div>
   </div>
 
   <!-- Preview Section -->
   <div class="preview">
     <h3>Preview</h3>
-    <img *ngIf="transformedImageUrl" [src]="transformedImageUrl" alt="Transformed Image" />
+    <div *ngIf="transformedImageUrl; else noPreview">
+      <img [src]="transformedImageUrl" alt="Transformed Image" class="transformed-image" />
+    </div>
+    <ng-template #noPreview>
+      <p>No image to preview. Upload an image to start transformations.</p>
+    </ng-template>
   </div>
 </div>
