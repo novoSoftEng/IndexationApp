@@ -32,6 +32,7 @@ app = Flask(__name__)
 api = Api(app)
 CORS(app)
 
+
 def transform_image(image_path, crop_coords=None, resize_dims=None, flip=None, rotate_angle=None):
     """
     Transform an image using cropping, resizing, flipping, and rotation.
@@ -133,7 +134,7 @@ def calculate_edge_histogram(image):
 def calculate_img_descriptors(image):
     """Combine all descriptors into a global score."""
     color_histogram = calculate_color_histogram(image)
-    dominant_colors = calculate_dominant_colors(image)
+    dominant_colors = calculate_dominant_colors(image, k=5)
     texture_descriptors = calculate_texture_descriptors(image)
     hu_moments = calculate_hu_moments(image)
     average_color = calculate_average_color(image)
