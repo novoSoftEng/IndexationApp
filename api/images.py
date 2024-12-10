@@ -152,7 +152,7 @@ def calculate_img_descriptors(image):
 
 
 def simple_search(img_descriptor, descriptors2, top_n=5,  w1=0.1, w2=0.8, w3=0.1,
-                  frame_weights=(0.7, 0.3), color_weights=(0.4, 0.1, 0.5), texture_weight=1.0):
+                  frame_weights=(0.7, 0.3), color_weights=(0.4, 0.1, 0.5)):
     """
     Finds the top N similar images to a query image based on weighted group-level distances.
 
@@ -189,7 +189,7 @@ def simple_search(img_descriptor, descriptors2, top_n=5,  w1=0.1, w2=0.8, w3=0.1
         )
 
         # Texture distance
-        texture_dist = texture_weight * euclidean(
+        texture_dist = euclidean(
             np.ravel(img_descriptor["texture_descriptors"]),
             np.ravel(img2_desc["texture_descriptors"])
         )
@@ -200,6 +200,113 @@ def simple_search(img_descriptor, descriptors2, top_n=5,  w1=0.1, w2=0.8, w3=0.1
     top_similar = sorted(similarities, key=lambda x: x['score'])[:top_n]
 
     return top_similar
+
+
+def query_point_movement2(w1, w2, w3, frame_weights, color_weights, relevant_descriptors,
+                          irrelevant_descriptors, alpha=1, beta=0.001, gamma=0.001):
+    """
+    Update weights based on user feedback using relevant and irrelevant descriptors.
+
+    Parameters:
+        w1, w2, w3: Current weights for frame, color, and texture groups.
+        frame_weights (tuple): Current weights for hu_moments and edge_histogram.
+        color_weights (tuple): Current weights for color_histogram, average_color, and dominant_colors.
+        # texture_weight (float): Current weight for texture_descriptors.
+        relevant_descriptors: List of descriptors for relevant images.
+        irrelevant_descriptors: List of descriptors for irrelevant images.
+        alpha: Weight increment for relevance feedback.
+        beta: Weight increment for relevance feedback.
+        gamma: Weight decrement for irrelevance feedback.
+
+    Returns:
+        Updated weights (w1, w2, w3, frame_weights, color_weights, texture_weight).
+    """
+    # print('input : ',w1, w2, w3, frame_weights, color_weights)
+    # Calculate group-level feedback scores for relevant and irrelevant images
+    relevant_frame_score = sum([
+        frame_weights[0] * np.linalg.norm(d['characteristics']["hu_moments"]) +
+        frame_weights[1] * np.linalg.norm(d['characteristics']["edge_histogram"])
+        for d in relevant_descriptors
+    ]) / len(relevant_descriptors)
+
+    relevant_color_score = sum([
+        color_weights[0] * np.linalg.norm(np.ravel(d['characteristics']["color_histogram"])) +
+        color_weights[1] * np.linalg.norm(np.ravel(d['characteristics']["average_color"])) +
+        color_weights[2] * np.linalg.norm(np.ravel(d['characteristics']["dominant_colors"]))
+        for d in relevant_descriptors
+    ]) / len(relevant_descriptors)
+
+    relevant_texture_score = sum([np.linalg.norm(d['characteristics']["texture_descriptors"]) for d in relevant_descriptors]) / len(relevant_descriptors)
+
+    irrelevant_frame_score = sum([
+        frame_weights[0] * np.linalg.norm(d['characteristics']["hu_moments"]) +
+        frame_weights[1] * np.linalg.norm(d['characteristics']["edge_histogram"])
+        for d in irrelevant_descriptors
+    ]) / len(irrelevant_descriptors)
+
+    irrelevant_color_score = sum([
+        color_weights[0] * np.linalg.norm(np.ravel(d['characteristics']["color_histogram"])) +
+        color_weights[1] * np.linalg.norm(np.ravel(d['characteristics']["average_color"])) +
+        color_weights[2] * np.linalg.norm(np.ravel(d['characteristics']["dominant_colors"]))
+        for d in irrelevant_descriptors
+    ]) / len(irrelevant_descriptors)
+
+    irrelevant_texture_score = sum([np.linalg.norm(d['characteristics']["texture_descriptors"]) for d in irrelevant_descriptors]) / len(irrelevant_descriptors)
+
+    # Update group weights
+    w1_new = alpha * w1 + beta * relevant_frame_score - gamma * irrelevant_frame_score
+    w2_new = alpha * w2 + beta * relevant_color_score - gamma * irrelevant_color_score
+    w3_new = alpha * w3 + beta * relevant_texture_score - gamma * irrelevant_texture_score
+
+    # Update frame weights
+    frame_weights_new = (
+        alpha * frame_weights[0] + beta * sum([
+            np.linalg.norm(d['characteristics']["hu_moments"]) for d in relevant_descriptors
+        ]) / len(relevant_descriptors) - 
+        gamma * sum([
+            np.linalg.norm(d['characteristics']["hu_moments"]) for d in irrelevant_descriptors
+        ]) / len(irrelevant_descriptors),
+
+        alpha * frame_weights[1] + beta * sum([
+            np.linalg.norm(d['characteristics']["edge_histogram"]) for d in relevant_descriptors
+        ]) / len(relevant_descriptors) -
+        gamma * sum([
+            np.linalg.norm(d['characteristics']["edge_histogram"]) for d in irrelevant_descriptors
+        ]) / len(irrelevant_descriptors)
+    )
+
+    # Update color weights
+    color_weights_new = (
+        alpha * color_weights[0] + beta * sum([
+            np.linalg.norm(np.ravel(d['characteristics']["color_histogram"])) for d in relevant_descriptors
+        ]) / len(relevant_descriptors) -
+        gamma * sum([
+            np.linalg.norm(np.ravel(d['characteristics']["color_histogram"])) for d in irrelevant_descriptors
+        ]) / len(irrelevant_descriptors),
+
+        alpha * color_weights[1] + beta * sum([
+            np.linalg.norm(np.ravel(d['characteristics']["average_color"])) for d in relevant_descriptors
+        ]) / len(relevant_descriptors) -
+        gamma * sum([
+            np.linalg.norm(np.ravel(d['characteristics']["average_color"])) for d in irrelevant_descriptors
+        ]) / len(irrelevant_descriptors),
+
+        alpha * color_weights[2] + beta * sum([
+            np.linalg.norm(np.ravel(d['characteristics']["dominant_colors"])) for d in relevant_descriptors
+        ]) / len(relevant_descriptors) -
+        gamma * sum([
+            np.linalg.norm(np.ravel(d['characteristics']["dominant_colors"])) for d in irrelevant_descriptors
+        ]) / len(irrelevant_descriptors)
+    )
+
+    # # Normalize weights to ensure their sum is 1 (optional)
+    # total_weight = w1_new + w2_new + w3_new
+    # w1_new /= total_weight
+    # w2_new /= total_weight
+    # w3_new /= total_weight
+    
+    # print('output : ', w1_new, w2_new, w3_new, frame_weights_new, color_weights_new)
+    return w1_new, w2_new, w3_new, frame_weights_new, color_weights_new
 
 
 # Resource classes for API
