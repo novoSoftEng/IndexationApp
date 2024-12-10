@@ -65,4 +65,25 @@ downloadFile(filename: string): Observable<Blob> {
     
     return this.http.post<any>(`${this.searchApi}/search`, formData);
   }
+  Transform(file: File, cropCoords?: string, resizeDims?: string, flip?: string, rotateAngle?: string): Observable<Blob> {
+    const formData: FormData = new FormData();
+    
+    // Append each transformation parameter if available
+    formData.append('image', file, file.name);
+    if (cropCoords) {
+      formData.append('crop_coords', cropCoords);
+    }
+    if (resizeDims) {
+      formData.append('resize_dims', resizeDims);
+    }
+    if (flip) {
+      formData.append('flip', flip);
+    }
+    if (rotateAngle) {
+      formData.append('rotate_angle', rotateAngle);
+    }
+
+    // Perform HTTP POST request to the server API
+    return this.http.post<Blob>(`${this.searchApi}/transform`, formData, { responseType: 'blob' as 'json' });
+  }
 }

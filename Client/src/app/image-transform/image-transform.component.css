@@ -1,0 +1,25 @@
+.transform-container {
+    max-width: 600px;
+    margin: 0 auto;
+    font-family: Arial, sans-serif;
+  }
+  
+  .upload-section {
+    margin-bottom: 20px;
+  }
+  
+  .parameters {
+    margin-top: 20px;
+  }
+  
+  .parameter {
+    margin-bottom: 15px;
+  }
+  
+  .preview img {
+    max-width: 100%;
+    height: auto;
+    border: 1px solid #ccc;
+    margin-top: 10px;
+  }
+  

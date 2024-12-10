@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { HttpClient, HttpClientModule, HttpHeaders } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ImageService } from '../Services/image.service';
 @Component({
   selector: 'app-image-transform',
   standalone: true,
@@ -10,7 +11,7 @@ import { FormsModule } from '@angular/forms';
   styleUrl: './image-transform.component.css'
 })
 export class ImageTransformComponent {
-  selectedFile: File | null = null;
+  selectedFile!: File;
   cropCoords: string = '';
   resizeDims: string = '';
   flip: string = '';
@@ -18,7 +19,7 @@ export class ImageTransformComponent {
   transformedImageUrl: string | null = null;
   imageUploaded: boolean = false;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private imageService: ImageService) {} // Inject the service
 
   onImageSelect(event: any): void {
     const file = event.target.files[0];
@@ -29,21 +30,8 @@ export class ImageTransformComponent {
   }
 
   uploadImage(file: File): void {
-    const formData = new FormData();
-    formData.append('image', file);
-
-    // Upload image to the server
-    this.http.post('/api/transform', formData, { responseType: 'blob' })
-      .subscribe(
-        (response: Blob) => {
-          this.imageUploaded = true;
-          this.transformedImageUrl = URL.createObjectURL(response);
-        },
-        (error) => {
-          console.error('Image upload failed:', error);
-          alert('Failed to upload image.');
-        }
-      );
+    this.selectedFile = file;
+    this.imageUploaded = true;
   }
 
   applyTransform(): void {
@@ -51,34 +39,20 @@ export class ImageTransformComponent {
       return;
     }
 
-    const formData = new FormData();
-    formData.append('image', this.selectedFile as Blob);
-
-    if (this.cropCoords) {
-      formData.append('crop_coords', this.cropCoords);
-    }
-
-    if (this.resizeDims) {
-      formData.append('resize_dims', this.resizeDims);
-    }
-
-    if (this.flip) {
-      formData.append('flip', this.flip);
-    }
-
-    if (this.rotateAngle) {
-      formData.append('rotate_angle', this.rotateAngle);
-    }
-
-    // Make live API request for transformations
-    this.http.post('http://localhost:5000/transform', formData, { responseType: 'blob' })
-      .subscribe(
-        (response: Blob) => {
-          this.transformedImageUrl = URL.createObjectURL(response);
-        },
-        (error) => {
-          console.error('Transformation failed:', error);
-        }
-      );
+    // Call the TransformService to apply transformations
+    this.imageService.Transform(
+      this.selectedFile,
+      this.cropCoords,
+      this.resizeDims,
+      this.flip,
+      this.rotateAngle
+    ).subscribe(
+      (response: Blob) => {
+        this.transformedImageUrl = URL.createObjectURL(response);
+      },
+      (error) => {
+        console.error('Transformation failed:', error);
+      }
+    );
   }
 }
