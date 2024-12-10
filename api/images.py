@@ -173,7 +173,7 @@ def simple_search(img_descriptor, descriptors2, top_n=5,  w1=0.1, w2=0.8, w3=0.1
     similarities = []
 
     for img2 in descriptors2:
-        img2_name = img2["filename"]
+        img2_name = img2['filename']
         img2_desc = img2["characteristics"]
 
         # Frame distance
@@ -417,10 +417,10 @@ class SearchService(Resource):
             query_descriptor = calculate_img_descriptors(image)
 
             # Fetch all descriptors from MongoDB
-            descriptors2 = list(collection.find({}, {"_id": 0}))  # Exclude _id field for simplicity
+            descriptors2 = list(collection.find({}))  # Exclude _id field for simplicity
 
             # Fetch weights from MongoDB
-            weights_doc = collection.find_one({"type": "weights"})
+            weights_doc = w_collection.find_one({"type": "weights"})
 
             if not weights_doc:
                 # Initialize consistent default weights if not found
@@ -435,9 +435,9 @@ class SearchService(Resource):
                 color_weights = weights_doc.get("color_weights", (0.4, 0.1, 0.5))
 
 
-            if "characteristics" in request.json:
+            if "characteristics" in request.form:
                 # Extract relevant and irrelevant descriptors from the request
-                characteristics = request.json["characteristics"]
+                characteristics = request.form.get("characteristics")
                 relevant_descriptors = characteristics.get("relevant", [])
                 irrelevant_descriptors = characteristics.get("irrelevant", [])
 
@@ -456,7 +456,7 @@ class SearchService(Resource):
                 )
 
                 # Save new weights to the database
-                collection.update_one(
+                w_collection.update_one(
                     {"type": "weights"},
                     {"$set": {
                         "w1": new_weights["w1"],
@@ -469,11 +469,14 @@ class SearchService(Resource):
                 )
             else:
                 # Perform the search with existing weights
-                top_similar = simple_search(
-                    query_descriptor, descriptors2, top_n=10,
-                    w1=w1, w2=w2, w3=w3,
-                    frame_weights=frame_weights, color_weights=color_weights
-                )
+                try:
+                    top_similar = simple_search(
+                        query_descriptor, descriptors2, top_n=10,
+                        w1=w1, w2=w2, w3=w3,
+                        frame_weights=frame_weights, color_weights=color_weights
+                    )
+                except Exception as e:
+                     return {"error calculating top similiar": str(e) , "value descriptors" :str(descriptors2) }, 500
 
             # Return results
             return top_similar, 200
