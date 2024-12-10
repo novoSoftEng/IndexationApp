@@ -443,28 +443,31 @@ class SearchService(Resource):
                 irrelevant_descriptors = characteristics.get("irrelevant", [])
 
                 # Recalculate weights using query_point_movement2
-                new_weights = query_point_movement2(
-                    w1, w2, w3, frame_weights, color_weights,
-                    relevant_descriptors, irrelevant_descriptors,
-                    alpha=1, beta=0.001, gamma=0.001
-                )
+                try:
+                    w1_new, w2_new, w3_new, frame_weights_new, color_weights_new = query_point_movement2(
+                        w1, w2, w3, frame_weights, color_weights,
+                        relevant_descriptors, irrelevant_descriptors,
+                        alpha=1, beta=0.001, gamma=0.001
+                    )
+                except Exception as e: 
+                    return {"error calculating new_weights": str(e)}, 500
 
                 # Perform the search with recalculated weights
                 top_similar = simple_search(
                     query_descriptor, descriptors2, top_n=10,
-                    w1=new_weights["w1"], w2=new_weights["w2"], w3=new_weights["w3"],
-                    frame_weights=new_weights["frame_weights"], color_weights=new_weights["color_weights"]
+                    w1=w1_new, w2=w2_new, w3=w3_new,
+                    frame_weights=frame_weights_new, color_weights=color_weights_new
                 )
 
                 # Save new weights to the database
                 w_collection.update_one(
                     {"type": "weights"},
                     {"$set": {
-                        "w1": new_weights["w1"],
-                        "w2": new_weights["w2"],
-                        "w3": new_weights["w3"],
-                        "frame_weights": new_weights["frame_weights"],
-                        "color_weights": new_weights["color_weights"]
+                        "w1": w1_new ,
+                        "w2":w2_new,
+                        "w3": w3_new,
+                        "frame_weights": frame_weights_new,
+                        "color_weights": color_weights_new
                     }},
                     upsert=True  # Create the document if it doesn't exist
                 )
