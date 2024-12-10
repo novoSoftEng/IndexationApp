@@ -9,7 +9,7 @@ from werkzeug.utils import secure_filename
 from scipy.spatial.distance import euclidean
 from dotenv import load_dotenv
 from flask_cors import CORS
-
+import random
 load_dotenv()
 
 # MongoDB Configuration
@@ -26,6 +26,7 @@ if not os.path.exists(UPLOAD_FOLDER):
 client = MongoClient(MONGO_URI)
 db = client[DATABASE_NAME]
 collection = db[COLLECTION_NAME]
+w_collection = db['weights']
 
 
 app = Flask(__name__)
@@ -416,10 +417,63 @@ class SearchService(Resource):
             query_descriptor = calculate_img_descriptors(image)
 
             # Fetch all descriptors from MongoDB
-            descriptors2 = list(collection.find({}))
+            descriptors2 = list(collection.find({}, {"_id": 0}))  # Exclude _id field for simplicity
 
-            # Perform the search
-            top_similar = simple_search(query_descriptor, descriptors2, top_n=10)
+            # Fetch weights from MongoDB
+            weights_doc = collection.find_one({"type": "weights"})
+
+            if not weights_doc:
+                # Initialize consistent default weights if not found
+                w1, w2, w3 = 0.1, 0.8, 0.1  # Updated based on your preferred values
+                frame_weights = (0.7, 0.3)  # Tuple format as per `simple_search` specification
+                color_weights = (0.4, 0.1, 0.5)  # Tuple format as per `simple_search` specification
+            else:
+                w1 = weights_doc.get("w1", 0.1)
+                w2 = weights_doc.get("w2", 0.5)
+                w3 = weights_doc.get("w3", 0.4)
+                frame_weights = weights_doc.get("frame_weights", (0.7, 0.3))
+                color_weights = weights_doc.get("color_weights", (0.4, 0.1, 0.5))
+
+
+            if "characteristics" in request.json:
+                # Extract relevant and irrelevant descriptors from the request
+                characteristics = request.json["characteristics"]
+                relevant_descriptors = characteristics.get("relevant", [])
+                irrelevant_descriptors = characteristics.get("irrelevant", [])
+
+                # Recalculate weights using query_point_movement2
+                new_weights = query_point_movement2(
+                    w1, w2, w3, frame_weights, color_weights,
+                    relevant_descriptors, irrelevant_descriptors,
+                    alpha=1, beta=0.001, gamma=0.001
+                )
+
+                # Perform the search with recalculated weights
+                top_similar = simple_search(
+                    query_descriptor, descriptors2, top_n=10,
+                    w1=new_weights["w1"], w2=new_weights["w2"], w3=new_weights["w3"],
+                    frame_weights=new_weights["frame_weights"], color_weights=new_weights["color_weights"]
+                )
+
+                # Save new weights to the database
+                collection.update_one(
+                    {"type": "weights"},
+                    {"$set": {
+                        "w1": new_weights["w1"],
+                        "w2": new_weights["w2"],
+                        "w3": new_weights["w3"],
+                        "frame_weights": new_weights["frame_weights"],
+                        "color_weights": new_weights["color_weights"]
+                    }},
+                    upsert=True  # Create the document if it doesn't exist
+                )
+            else:
+                # Perform the search with existing weights
+                top_similar = simple_search(
+                    query_descriptor, descriptors2, top_n=10,
+                    w1=w1, w2=w2, w3=w3,
+                    frame_weights=frame_weights, color_weights=color_weights
+                )
 
             # Return results
             return top_similar, 200
