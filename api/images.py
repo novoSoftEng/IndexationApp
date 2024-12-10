@@ -9,18 +9,18 @@ from werkzeug.utils import secure_filename
 from scipy.spatial.distance import euclidean
 from dotenv import load_dotenv
 from flask_cors import CORS
+
 load_dotenv()
 
 # MongoDB Configuration
 MONGO_URI =  os.getenv('MONGO_URI')
 DATABASE_NAME = os.getenv('DATABASE_NAME')
 COLLECTION_NAME =os.getenv('COLLECTION_NAME')
+
 # Directory to store uploaded images
 UPLOAD_FOLDER = '../uploaded_images'
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
-
-
 
 
 client = MongoClient(MONGO_URI)
@@ -31,6 +31,7 @@ collection = db[COLLECTION_NAME]
 app = Flask(__name__)
 api = Api(app)
 CORS(app)
+
 
 def transform_image(image_path, crop_coords=None, resize_dims=None, flip=None, rotate_angle=None):
     """
@@ -86,6 +87,7 @@ def calculate_color_histogram(image):
 
 def calculate_dominant_colors(image, k=3):
     """Calculate dominant colors using k-means clustering."""
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     pixels = image.reshape((-1, 3))
     pixels = np.float32(pixels)
 
@@ -133,7 +135,7 @@ def calculate_edge_histogram(image):
 def calculate_img_descriptors(image):
     """Combine all descriptors into a global score."""
     color_histogram = calculate_color_histogram(image)
-    dominant_colors = calculate_dominant_colors(image)
+    dominant_colors = calculate_dominant_colors(image, k=5)
     texture_descriptors = calculate_texture_descriptors(image)
     hu_moments = calculate_hu_moments(image)
     average_color = calculate_average_color(image)
@@ -149,40 +151,52 @@ def calculate_img_descriptors(image):
     }
 
 
-def simple_search(img_descriptor, descriptors2, top_n=5):
-    # Define weights for each group (frame, color, and texture)
-    w1, w2, w3 = 0.1, 0.5, 0.4
+def simple_search(img_descriptor, descriptors2, top_n=5,  w1=0.1, w2=0.8, w3=0.1,
+                  frame_weights=(0.7, 0.3), color_weights=(0.4, 0.1, 0.5), texture_weight=1.0):
+    """
+    Finds the top N similar images to a query image based on weighted group-level distances.
 
+    Parameters:
+        img_descriptor (dict): Descriptors of the query image.
+        descriptors2 (list): List of descriptors for other images. Each entry is a dictionary 
+                             with keys 'filename' and 'characteristics'.
+        top_n (int): Number of top similar images to return.
+        w1, w2, w3 (float): Weights for frame, color, and texture groups.
+        frame_weights (tuple): Weights for hu_moments and edge_histogram.
+        color_weights (tuple): Weights for color_histogram, average_color, and dominant_colors.
+        texture_weight (float): Weight for texture_descriptors.
+
+    Returns:
+        list: Top N similar images as dictionaries with 'filename' and 'score'.
+    """
     similarities = []
 
     for img2 in descriptors2:
-        try:
-            img2_name = img2["filename"]
-            img2_desc = img2["characteristics"]
+        img2_name = img2["filename"]
+        img2_desc = img2["characteristics"]
 
-            img2_cat = img2["category"]
-        except Exception as e:
-            return {"error": str(e)}, 500
-
-        # Calculate group-level distances
-        frame_dist = euclidean(
-            np.hstack([img_descriptor["hu_moments"], img_descriptor["edge_histogram"]]),
-            np.hstack([img2_desc["hu_moments"], img2_desc["edge_histogram"]])
-        )
-        color_dist = euclidean(
-            np.hstack([np.hstack(img_descriptor["color_histogram"]), img_descriptor["average_color"]]),
-            np.hstack([np.hstack(img2_desc["color_histogram"]), img2_desc["average_color"]])
-        )
-        texture_dist = euclidean(
-            img_descriptor["texture_descriptors"],
-            img2_desc["texture_descriptors"]
+        # Frame distance
+        frame_dist = (
+            frame_weights[0] * euclidean(img_descriptor["hu_moments"], img2_desc["hu_moments"]) +
+            frame_weights[1] * euclidean(img_descriptor["edge_histogram"], img2_desc["edge_histogram"])
         )
 
-        # Combine distances into a single similarity score
-        total_distance = w1 * frame_dist + w2 * color_dist + w3 * texture_dist
-        similarities.append({'filename': img2_name, 'score' :total_distance,'category':img2_cat })
+        # Color distance
+        color_dist = (
+            color_weights[0] * euclidean(np.ravel(img_descriptor["color_histogram"]), np.ravel(img2_desc["color_histogram"])) +
+            color_weights[1] * euclidean(np.ravel(img_descriptor["average_color"]), np.ravel(img2_desc["average_color"])) +
+            color_weights[2] * euclidean(np.ravel(img_descriptor["dominant_colors"]), np.ravel(img2_desc["dominant_colors"]))
+        )
 
-    # Sort by similarity (ascending order) and take the top N
+        # Texture distance
+        texture_dist = texture_weight * euclidean(
+            np.ravel(img_descriptor["texture_descriptors"]),
+            np.ravel(img2_desc["texture_descriptors"])
+        )
+
+        total_distance = (w1 * frame_dist + w2 * color_dist + w3 * texture_dist) / 3
+        similarities.append({'filename': img2_name, 'score': total_distance})
+
     top_similar = sorted(similarities, key=lambda x: x['score'])[:top_n]
 
     return top_similar
@@ -264,16 +278,12 @@ class DescriptorService(Resource):
             # Read image using OpenCV
             image_bytes = np.frombuffer(image_file.read(), np.uint8)
             image = cv2.imdecode(image_bytes, cv2.IMREAD_COLOR)
+
             # Convert the image from BGR to RGB
-            if image is not None and len(image.shape) == 3:
-                image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-            else:
-                raise ValueError("Failed to load image or image is not in correct format.")
 
             if image is None:
                 results[image_file.filename] = {"error": "Invalid image format"}
                 continue
-
 
             # Store results
             results[image_file.filename] = calculate_img_descriptors(image)
@@ -302,7 +312,7 @@ class SearchService(Resource):
             descriptors2 = list(collection.find({}))
 
             # Perform the search
-            top_similar = simple_search(query_descriptor, descriptors2)
+            top_similar = simple_search(query_descriptor, descriptors2, top_n=10)
 
             # Return results
             return top_similar, 200
