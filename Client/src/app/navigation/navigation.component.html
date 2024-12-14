@@ -15,16 +15,21 @@
   </mat-sidenav>
   <mat-sidenav-content>
     <mat-toolbar color="primary">
-      @if (isHandset$ | async) {
-        <button
-          type="button"
-          aria-label="Toggle sidenav"
-          mat-icon-button
-          (click)="drawer.toggle()">
-          <mat-icon aria-label="Side nav toggle icon">menu</mat-icon>
-        </button>
-      }
-      <span>Client</span>
+      <button
+        *ngIf="(isHandset$ | async)"
+        type="button"
+        aria-label="Toggle sidenav"
+        mat-icon-button
+        (click)="drawer.toggle()">
+        <mat-icon aria-label="Side nav toggle icon">menu</mat-icon>
+      </button>
+      <div class="chips-container">
+        <mat-chip-listbox  (change)="onCategoryChange($event)">
+          @for (category of categories; track category){
+          <mat-chip-option [value]="category"  selected>{{category}}</mat-chip-option>
+          }
+        </mat-chip-listbox>
+      </div>
     </mat-toolbar>
     <router-outlet></router-outlet>
   </mat-sidenav-content>
