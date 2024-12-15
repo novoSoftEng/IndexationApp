@@ -10,6 +10,7 @@ import { Observable } from 'rxjs';
 import { map, shareReplay } from 'rxjs/operators';
 import { RouterModule, RouterOutlet } from '@angular/router';
 import {MatChipsModule} from '@angular/material/chips';
+import { ImageService } from '../Services/image.service';
 
 @Component({
   selector: 'app-navigation',
@@ -29,15 +30,12 @@ import {MatChipsModule} from '@angular/material/chips';
   ]
 })
 export class NavigationComponent {
+  constructor(private imageService: ImageService){}
 selectedCategory: any;
-onCategorySelect(_t47: any) {
-throw new Error('Method not implemented.');
-}
 categories: string[] = ['Grass', 'Field','Industry','RiverLake','Forest','Resident','Parking']; // Example categories
   category!: string | null;
   private breakpointObserver = inject(BreakpointObserver);
 // Output event emitter to notify parent components
-@Output() categorySelected = new EventEmitter<string>();
   isHandset$: Observable<boolean> = this.breakpointObserver.observe(Breakpoints.Handset)
     .pipe(
       map(result => result.matches),
@@ -48,7 +46,13 @@ categories: string[] = ['Grass', 'Field','Industry','RiverLake','Forest','Reside
 onCategoryChange(event: any): void {
   const selectedCategory = event.source?.value; // Get the selected value
   this.selectedCategory = selectedCategory; // Update the local selected category
-  this.categorySelected.emit(selectedCategory); // Emit the selected category
-  console.log('Category selected:', selectedCategory);
+  if(this.selectedCategory){
+    this.imageService.setSelectedCategory(this.selectedCategory); // Notify service
+    
+    this.imageService.selectedCategory$.subscribe((cat)=>{
+      console.log('Category selected:', cat);
+    })
+  }
+
 }
 }

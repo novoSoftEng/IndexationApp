@@ -32,7 +32,7 @@ export class ImageDialogComponent implements AfterViewInit {
   constructor(private imageService: ImageService) {}
 
   ngAfterViewInit(): void {
-    this.imageService.getImageDetails(this.data.image).subscribe((d) => {
+    this.imageService.getImageDetails(this.data.filename).subscribe((d) => {
       // Extracting characteristics from the response
       this.data.characteristics = d.image[0]?.characteristics || {};
       this.data.category = d.image[0]?.category || 'Unknown';

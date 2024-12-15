@@ -215,6 +215,21 @@ app.get('/images', async (req, res) => {
     }
   });
 
+  // Get images by category
+app.get('/images/category/:category', async (req, res) => {
+  try {
+      const { category } = req.params;
+
+      // Fetch images that match the specified category
+      const images = await Image.find({ category });
+      res.status(200).json({ images });
+  } catch (error) {
+      console.error('Error fetching images by category:', error);
+      res.status(500).json({ message: 'Error fetching images from MongoDB', error: error.message });
+  }
+});
+
+
 // Start the server
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);

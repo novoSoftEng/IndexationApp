@@ -1,12 +1,14 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { catchError, map, Observable, throwError } from 'rxjs';
+import { BehaviorSubject, catchError, map, Observable, throwError } from 'rxjs';
 import { environment } from '../environment';
 import { SearchResults } from '../interfaces/search-results';
 @Injectable({
   providedIn: 'root'
 })
 export class ImageService {
+  private categorySubject = new BehaviorSubject<string | null>(null); // Stores the selected category
+  selectedCategory$ = this.categorySubject.asObservable(); // Exposes the observable
   private apiUrl = `${environment.apiUrl}`;  // Assuming the backend is hosted at apiUrl
   private searchApi = `${environment.searchApi}`;
 
@@ -49,6 +51,14 @@ downloadFile(filename: string): Observable<Blob> {
   // 5. Get a specific image (by filename)
   getImage(filename: string): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/download/${filename}`);
+  }
+  setSelectedCategory(category: string): void {
+    this.categorySubject.next(category); // Updates the selected category
+  }
+
+  getImagesByCat(cat : string ): Observable<any> {
+
+    return this.http.get<any>(`${this.apiUrl}/images/category/${cat}`);
   }
   getAllImagesDetails(): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/images`);
