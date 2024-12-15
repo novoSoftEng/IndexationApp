@@ -8,19 +8,33 @@ import { ImageDialogComponent } from './image-dialog/image-dialog.component';
 import { CommonModule } from '@angular/common';
 import { ImageService } from '../Services/image.service';
 import { filter, forkJoin, map, of, switchMap, tap } from 'rxjs';
+import { MatPaginatorModule } from '@angular/material/paginator';
 @Component({
   selector: 'app-gallery',
   standalone: true,
-  imports: [CommonModule,MatDialogModule,MatToolbarModule,MatListModule,MatIconModule,MatGridListModule],
+  imports: [CommonModule,MatDialogModule,MatToolbarModule,MatListModule,MatIconModule,MatGridListModule,MatPaginatorModule],
   templateUrl: './gallery.component.html',
   styleUrl: './gallery.component.css'
 })
 export class GalleryComponent implements OnInit{
 images: any;
   dialogRef: any;
+  pageSize: number = 8; // Number of images per page
+  pageIndex: number = 0; // Initial page index
+
 constructor(public dialog: MatDialog, private imageService: ImageService) {
 
     
+}
+// Event handler for page changes
+onPageChange(event: any): void {
+  this.pageIndex = event.pageIndex;
+}
+
+// Get current page images
+get paginatedImages(): any[] {
+  const startIndex = this.pageIndex * this.pageSize;
+  return this.images.slice(startIndex, startIndex + this.pageSize);
 }
   ngOnInit(): void {
     this.imageService.getAllImages().pipe(
