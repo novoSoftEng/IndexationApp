@@ -1,25 +1,103 @@
+/* Style for the main transformation container */
 .transform-container {
-    max-width: 600px;
-    margin: 0 auto;
-    font-family: Arial, sans-serif;
-  }
-  
-  .upload-section {
-    margin-bottom: 20px;
-  }
-  
-  .parameters {
-    margin-top: 20px;
-  }
-  
-  .parameter {
-    margin-bottom: 15px;
-  }
-  
-  .preview img {
-    max-width: 100%;
-    height: auto;
-    border: 1px solid #ccc;
-    margin-top: 10px;
-  }
-  
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.transform-container h2,
+.transform-container h3 {
+  text-align: center;
+  color: #333;
+}
+
+.upload-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+#image-upload {
+  width: 100%;
+  max-width: 300px;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #fff;
+  outline: none;
+  transition: border-color 0.3s;
+}
+
+#image-upload:hover,
+#image-upload:focus {
+  border-color: #007bff;
+}
+
+.parameters {
+  margin-bottom: 20px;
+}
+
+.parameter-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 15px;
+}
+
+.parameter-group label {
+  margin-bottom: 5px;
+  font-weight: bold;
+  color: #555;
+}
+
+.parameter-group input,
+.parameter-group select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  outline: none;
+  transition: border-color 0.3s;
+}
+
+.parameter-group input:focus,
+.parameter-group select:focus {
+  border-color: #007bff;
+}
+
+.parameter-group button {
+  width: 100%;
+  max-width: 200px;
+  padding: 10px;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.parameter-group button:hover {
+  background-color: #0056b3;
+}
+
+.preview {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.transformed-image {
+  max-width: 100%;
+  height: auto;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+}
+
+.no-preview {
+  font-size: 14px;
+  color: #777;
+}
