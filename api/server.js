@@ -43,7 +43,11 @@ const imageSchema = new mongoose.Schema({
     edge_histogram :  [Number]
   },
 });
-const Image = mongoose.model("Image", imageSchema);
+// const Image = mongoose.model("Image", imageSchema);
+// Dynamically use collection name from .env
+const collectionName = process.env.COLLECTION_NAME || 'images'; // Default to 'images' if not set
+const Image = mongoose.model(collectionName, imageSchema);
+
 
 
 

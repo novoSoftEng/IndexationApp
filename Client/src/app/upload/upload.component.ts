@@ -7,10 +7,13 @@ import {MatInputModule} from '@angular/material/input';
 import {MatSelectModule} from '@angular/material/select';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import { FormsModule } from '@angular/forms';
+import * as THREE from 'three';
+import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
 interface upload{
   file: File;
-     preview: string;
+     preview?: string;
     category?:string | null ;
+    id: string; // Unique ID for each object
 }
 @Component({
   selector: 'app-upload',
@@ -20,7 +23,43 @@ interface upload{
   imports: [CommonModule,CdkDrag,CdkDropList,MatIconModule,DragDropModule,MatInputModule,MatSelectModule,MatFormFieldModule,FormsModule]
 })
 export class UploadComponent {
-  categories: string[] = ['Grass', 'Field','Industry','RiverLake','Forest','Resident','Parking']; // Example categories
+ categories: string[] = [
+    "Abstract",
+    "Modern-Glass",
+    "Alabastron",
+    "Modern-Mug",
+    "Modern-Vase",
+    "Amphora",
+    "Mug",
+    "Aryballos",
+    "Native American - Bottle",
+    "Bowl",
+    "Native American - Bowl",
+    "Dinos",
+    "Native American - Effigy",
+    "Hydria",
+    "Native American - Jar",
+    "Kalathos",
+    "Nestoris",
+    "Kantharos",
+    "Oinochoe",
+    "Krater",
+    "Other",
+    "Kyathos",
+    "Pelike",
+    "Kylix",
+    "Picher Shaped",
+    "Lagynos",
+    "Pithoeidi",
+    "Lebes",
+    "Pithos",
+    "Lekythos",
+    "Psykter",
+    "Lydion",
+    "Pyxis",
+    "Mastos",
+    "Skyphos"
+  ];
   category!: string | null;
 
   constructor(private imageService : ImageService ){}
@@ -62,13 +101,57 @@ export class UploadComponent {
   }
   // Adds a file to the queue and creates its preview
   addToQueue(file: File): void {
+    const id = crypto.randomUUID(); // Unique ID for tracking
+    this.uploadQueue.push({ file, id });
+
+    if (file.name.endsWith('.obj')) {
+      this.create3DPreview(file, id);
+    }
+  }
+  create3DPreview(file: File, id: string): void {
     const reader = new FileReader();
     reader.onload = (e) => {
-      this.uploadQueue.push({ file, preview: e.target?.result as string});
+      const objData = e.target?.result as string;
+
+      // Initialize Three.js scene
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+      const renderer = new THREE.WebGLRenderer();
+      renderer.setSize(50, 50); // Set canvas size
+
+      // Light and camera setup
+      const light = new THREE.DirectionalLight(0xffffff, 1);
+      light.position.set(1, 1, 1).normalize();
+      scene.add(light);
+
+      camera.position.z = 5;
+
+      // Load OBJ model
+      const loader = new OBJLoader();
+      loader.load(
+        URL.createObjectURL(file),
+        (obj) => {
+          scene.add(obj);
+          const animate = () => {
+            requestAnimationFrame(animate);
+            obj.rotation.y += 0.01; // Rotate for better visualization
+            renderer.render(scene, camera);
+          };
+          animate();
+        },
+        undefined,
+        (error) => console.error('Error loading OBJ file:', error)
+      );
+
+      // Append canvas to the DOM
+      const container = document.getElementById(`preview-${id}`);
+      if (container) {
+        container.innerHTML = ''; // Clear previous content
+        container.appendChild(renderer.domElement);
+      }
     };
     reader.readAsDataURL(file);
   }
-
   // Removes an image from the upload queue
   removeImage(image: upload): void {
     this.uploadQueue = this.uploadQueue.filter(item => item !== image);

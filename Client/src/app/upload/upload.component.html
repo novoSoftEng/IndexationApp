@@ -8,7 +8,9 @@
       <p>Drag & drop your images here or click to upload</p>
     </div>
     <div class="list-item" *ngFor="let image of uploadQueue" cdkDrag>
-      <img [src]="image.preview" alt="Preview" class="preview-image" />
+      <div *ngIf="image.file.name.endsWith('.obj')">
+        <div id="preview-{{image.id}}" class="preview-3d-container"></div>
+      </div>
       <button mat-icon-button (click)="removeImage(image)">
         <mat-icon>delete</mat-icon>
       </button>
