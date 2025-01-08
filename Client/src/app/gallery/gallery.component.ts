@@ -9,6 +9,9 @@ import { CommonModule } from '@angular/common';
 import { ImageService } from '../Services/image.service';
 import { filter, forkJoin, map, of, switchMap, tap } from 'rxjs';
 import { MatPaginatorModule } from '@angular/material/paginator';
+import * as THREE from 'three';
+import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
+
 @Component({
   selector: 'app-gallery',
   standalone: true,
@@ -26,6 +29,66 @@ constructor(public dialog: MatDialog, private imageService: ImageService) {
 
     
 }
+ngAfterViewInit(): void {
+  this.renderObjFiles();
+}
+
+renderObjFiles(): void {
+  this.paginatedImages.forEach((file) => {
+    const canvas = document.getElementById(`objCanvas-${file.filename}`) as HTMLCanvasElement;
+
+    if (!canvas) {
+      console.warn('Canvas not found for file:', file.filename);
+      return;
+    }
+
+    // Create scene
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf0f0f0);
+
+    // Create camera with a side perspective
+    const camera = new THREE.PerspectiveCamera(50, canvas.offsetWidth / canvas.offsetHeight, 0.1, 5000);
+    camera.position.set(10, 50, 10); // Position the camera slightly above and to the side
+    camera.lookAt(0, 0, 0); // Ensure the camera looks at the center of the scene
+
+    // Create renderer
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    renderer.setSize(canvas.offsetWidth, canvas.offsetHeight);
+
+    // Add lighting
+    const ambientLight = new THREE.AmbientLight(0x404040, 2); // Soft light
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    directionalLight.position.set(0, 1, 2).normalize();
+    scene.add(ambientLight, directionalLight);
+
+    // Load and add the .obj file to the scene
+    const loader = new OBJLoader();
+    loader.load(
+      file.url,
+      (object) => {
+        // Scale down the object to make it smaller
+        object.scale.set(0.5, 0.5, 0.5); // Reduce scale to 50% of its original size
+        //object.rotation.y = Math.PI ; // Rotate the object 90 degrees on the Y-axis for a side view
+        
+        object.position.set(0, 0, 0); // Center the object in the scene
+        scene.add(object);
+
+        // Start rendering loop
+        animate();
+      },
+      undefined,
+      (error) => console.error('Error loading .obj file:', error)
+    );
+
+    // Animation and rendering loop
+    function animate() {
+      requestAnimationFrame(animate);
+      renderer.render(scene, camera);
+    }
+  });
+}
+
+
 // Event handler for page changes
 onPageChange(event: any): void {
   this.pageIndex = event.pageIndex;

@@ -1,17 +1,23 @@
-<!-- Gallery Grid -->
 <mat-grid-list cols="4" rowHeight="1:1" gutterSize="16px" class="gallery-grid">
-  <mat-grid-tile *ngFor="let image of paginatedImages" (click)="openDialog(image)">
+  <mat-grid-tile *ngFor="let file of paginatedImages" (click)="openDialog(file)">
     <div class="image-container">
-      <img [src]="image.url" [alt]="image.filename" class="gallery-image"/>
+      <ng-container>
+        <!-- Canvas for rendering .obj -->
+        <canvas #canvas id="objCanvas-{{ file.filename }}" class="obj-canvas"></canvas>
+      </ng-container>
+      <ng-template #imageTemplate>
+        <img [src]="file.url" [alt]="file.filename" class="gallery-image" />
+      </ng-template>
       <div class="image-overlay">
         <mat-icon>zoom_in</mat-icon>
       </div>
     </div>
     <mat-grid-tile-footer>
-      <div class="image-title">{{ image.filename }}</div>
+      <div class="image-title">{{ file.filename }}</div>
     </mat-grid-tile-footer>
   </mat-grid-tile>
 </mat-grid-list>
+
 
 <!-- Pagination -->
 <mat-paginator
