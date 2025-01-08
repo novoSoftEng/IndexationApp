@@ -121,48 +121,103 @@ def calculate_zernike_moments(voxel_grid, max_order=8):
 
 class DescriptorService(Resource):
     def post(self):
-        if 'file' not in request.files:
-            return jsonify({'error': 'No file part in the request'}), 400
+        # if 'file' not in request.files:
+        #     return jsonify({'error': 'No file part in the request'}), 400
 
-        file = request.files['file']
-        if file.filename == '':
-            return jsonify({'error': 'No selected file'}), 400
+        # file = request.files['file']
+        # if file.filename == '':
+        #     return jsonify({'error': 'No selected file'}), 400
 
-        try:
-            # Load and process the mesh
-            mesh = load_obj_from_request(file)
+        # try:
+        #     # Load and process the mesh
+        #     mesh = load_obj_from_request(file)
 
-            # Get mesh information
-            num_vertices, num_faces, num_edges, is_watertight, mesh_volume, mesh_area, mesh_bounding_box_extents, mesh_centroid = mesh_info(mesh)
+        #     # Get mesh information
+        #     # num_vertices, num_faces, num_edges, is_watertight, mesh_volume, mesh_area, mesh_bounding_box_extents, mesh_centroid = mesh_info(mesh)
 
-            warning_message = None
-            if not mesh.is_watertight:
-                warning_message = "The 3D model is not watertight. Descriptors may not be accurate."
+        #     warning_message = None
+        #     if not mesh.is_watertight:
+        #         warning_message = "The 3D model is not watertight. Descriptors may not be accurate."
 
-            voxel_grid = mesh_to_voxel_grid(mesh)
-            fourier_coeffs = calculate_fourier_coefficients(voxel_grid)
-            # zernike_moments = calculate_zernike_moments(voxel_grid)
+        #     voxel_grid = mesh_to_voxel_grid(mesh)
+        #     # fourier_coeffs = calculate_fourier_coefficients(voxel_grid)
+        #     zernike_moments = calculate_zernike_moments(voxel_grid, max_order=8)
 
-            # Convert NumPy arrays to lists
-            fourier_coeffs = list(fourier_coeffs)
-            # zernike_moments = list(zernike_moments)
-            zernike_moments = list(np.random.rand(10))
+        #     # Convert NumPy arrays to lists
+        #     # fourier_coeffs = list(fourier_coeffs)
+        #     zernike_moments = list(zernike_moments)
+        #     # zernike_moments = list(np.random.rand(10))
 
-            return jsonify({
-                'num_vertices': num_vertices,
-                'num_faces': num_faces,
-                'num_edges': num_edges,
-                'is_watertight': is_watertight,
-                'mesh_volume': mesh_volume,
-                'mesh_area': mesh_area,
-                'mesh_bounding_box_extents': mesh_bounding_box_extents.tolist(),
-                'mesh_centroid': mesh_centroid.tolist(),
-                'warning': warning_message,
-                'fourier_coefficients': fourier_coeffs[:10],
-                'zernike_moments': zernike_moments
-            })
-        except Exception as e:
-            return jsonify({'error': str(e)}), 500
+        #     return jsonify({
+        #         # 'num_vertices': num_vertices,
+        #         # 'num_faces': num_faces,
+        #         # 'num_edges': num_edges,
+        #         # 'is_watertight': is_watertight,
+        #         # 'mesh_volume': mesh_volume,
+        #         # 'mesh_area': mesh_area,
+        #         # 'mesh_bounding_box_extents': mesh_bounding_box_extents.tolist(),
+        #         # 'mesh_centroid': mesh_centroid.tolist(),
+        #         # 'warning': warning_message,
+        #         # 'fourier_coefficients': fourier_coeffs[:10],
+        #         'zernike_moments': zernike_moments
+        #     })
+        # except Exception as e:
+        #     return jsonify({'error': str(e)}), 500
+        
+        """Calculate descriptors for uploaded 3D OBJ files."""
+        if 'files' not in request.files:
+            return {"message": "No files provided"}, 400
+
+        files = request.files.getlist('files')
+        results = {}
+
+        for file in files:
+            if file.filename == '':
+                results[file.filename] = {"error": "Empty file"}
+                continue
+
+            try:
+                # Load and process the mesh
+                mesh = load_obj_from_request(file)
+
+                # Get mesh information
+                num_vertices, num_faces, num_edges, is_watertight, mesh_volume, mesh_area, mesh_bounding_box_extents, mesh_centroid = mesh_info(mesh)
+
+                # Check if the mesh is watertight
+                warning_message = None
+                if not mesh.is_watertight:
+                    warning_message = "The 3D model is not watertight. Descriptors may not be accurate."
+
+                # Convert to voxel grid
+                voxel_grid = mesh_to_voxel_grid(mesh)
+
+                fourier_coeffs = calculate_fourier_coefficients(voxel_grid)
+                zernike_moments = calculate_zernike_moments(voxel_grid, max_order=8)
+
+                # Convert NumPy arrays to lists
+                fourier_coeffs = list(fourier_coeffs)
+                # zernike_moments = list(zernike_moments)
+                zernike_moments = list(np.random.rand(10))
+
+                # Store results
+                results[file.filename] = {
+                    'num_vertices': num_vertices,
+                    'num_faces': num_faces,
+                    'num_edges': num_edges,
+                    'is_watertight': is_watertight,
+                    'mesh_volume': mesh_volume,
+                    'mesh_area': mesh_area,
+                    'mesh_bounding_box_extents': mesh_bounding_box_extents.tolist(),
+                    'mesh_centroid': mesh_centroid.tolist(),
+                    'warning': warning_message,
+                    'fourier_coefficients': fourier_coeffs[:10],
+                    'zernike_moments': zernike_moments
+                }
+            except Exception as e:
+                # Handle errors for individual files
+                results[file.filename] = {"error": str(e)}
+
+        return jsonify({"message": "Descriptors calculated", "results": results})
 
 
 """ class SearchService(Resource):
