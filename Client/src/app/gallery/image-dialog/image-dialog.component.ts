@@ -12,6 +12,9 @@ import {
   Chart,
   registerables // This includes all necessary components for most charts
 } from 'chart.js';
+import * as THREE from 'three';
+import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
 // Register all necessary Chart.js components globally
 Chart.register(...registerables);
@@ -28,125 +31,72 @@ export class ImageDialogComponent implements AfterViewInit {
   readonly data = inject<any>(MAT_DIALOG_DATA);
   @Output() deleted = new EventEmitter<any>();
 
+  private renderer!: THREE.WebGLRenderer;
+  private camera!: THREE.PerspectiveCamera;
+  private scene!: THREE.Scene;
+  private controls!: OrbitControls;
 
-  constructor(private imageService: ImageService) {}
+  constructor(private imageService:ImageService) {}
 
   ngAfterViewInit(): void {
-    this.imageService.getImageDetails(this.data.filename).subscribe((d) => {
-      // Extracting characteristics from the response
-      this.data.characteristics = d.image[0]?.characteristics || {};
-      this.data.category = d.image[0]?.category || 'Unknown';
-
-      console.log('Characteristics:', this.data.characteristics);
-
-      // Create charts if characteristics are available
-      if (this.data.characteristics.color_histogram) {
-        setTimeout(() => this.createColorHistogramChart(), 0);
-      }
-      if (this.data.characteristics.dominant_colors) {
-        setTimeout(() => this.createDominantColorsChart(), 0);
-      }
-      setTimeout(() =>this.showAverageColor(), 0);
-      setTimeout(() =>this.createHuMomentsChart(), 0);
-      setTimeout(() =>this.createEdgeHistogramChart(), 0);
-      setTimeout(() =>this.createTextureDescriptorsChart(), 0);
-    });
+    this.renderObjFile();
   }
 
-  createColorHistogramChart() {
-    const colorHistogram = this.data.characteristics.color_histogram; // 3D array: [Red, Green, Blue]
-    if (
-      !Array.isArray(colorHistogram) ||
-      colorHistogram.length !== 3 ||
-      !Array.isArray(colorHistogram[0])
-    ) {
-      console.error('Invalid colorHistogram structure. Expected a 3D array with 3 channels.');
+  renderObjFile(): void {
+    const canvas = document.getElementById('objCanvas') as HTMLCanvasElement;
+
+    if (!canvas) {
+      console.error('Canvas element not found.');
       return;
     }
-  
-    const labels = Array.from(
-      { length: colorHistogram[0].length },
-      (_, i) => `${i + 1}`
-    );
-  
-    const colors = ['rgba(0, 0, 255, 1)', 'rgba(0, 255, 0, 1)', 'rgba(255, 0, 0, 1)']; // RGB colors
-    const backgroundColors = [
-      'rgba(0, 0, 255, 0.2)',
-      'rgba(0, 255, 0, 0.2)',
-      'rgba(255, 0, 0, 0.2)'
-      ,
-    ];
-  
-    const datasets = colorHistogram.map((channelData: number[], index: number) => ({
-      label: ['Blue', 'Green', 'Red'][index],
-      data: channelData,
-      borderColor: colors[index],
-      backgroundColor: backgroundColors[index],
-      borderWidth: 1,
-      fill: false, // Do not fill under the line
-    }));
-  
-    const canvas = document.getElementById(
-      'color-histogram-canvas'
-    ) as HTMLCanvasElement;
-    if (canvas) {
-      new Chart(canvas, {
-        type: 'line',
-        data: {
-          labels: labels,
-          datasets: datasets,
-        },
-        options: {
-          responsive: true,
-          scales: {
-            x: {
-              title: {
-                display: true,
-                text: 'Bins',
-              },
-            },
-            y: {
-              beginAtZero: true,
-              title: {
-                display: true,
-                text: 'Frequency',
-              },
-            },
-          },
-          plugins: {
-            legend: {
-              position: 'top',
-            },
-          },
-        },
-      });
-    } else {
-      console.error('Canvas for color histogram chart not found.');
-    }
-  }
-  
-  createDominantColorsChart() {
-    const dominantColors = this.data.characteristics.dominant_colors;
-    const colors = dominantColors.map((color: number[]) => `rgb(${color.join(',')})`);
-    const data = dominantColors.map(() => 1);
 
-    const canvas = document.getElementById('dominant-colors-canvas') as HTMLCanvasElement;
-    if (canvas) {
-      new Chart(canvas, {
-        type: 'pie',
-        data: {
-          labels: colors,
-          datasets: [
-            {
-              data: data,
-              backgroundColor: colors,
-            },
-          ],
-        },
-      });
-    } else {
-      console.error('Canvas for dominant colors chart not found.');
-    }
+    // Initialize THREE.js scene, camera, and renderer
+    this.scene = new THREE.Scene();
+    this.scene.background = new THREE.Color(0xf0f0f0);
+
+    this.camera = new THREE.PerspectiveCamera(50, canvas.offsetWidth / canvas.offsetHeight, 0.1, 1000);
+    this.camera.position.set(10, 10, 20); // Set initial camera position
+
+    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    this.renderer.setSize(canvas.offsetWidth, canvas.offsetHeight);
+
+    // Add lighting
+    const ambientLight = new THREE.AmbientLight(0x404040, 2); // Soft ambient light
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    directionalLight.position.set(5, 10, 7.5).normalize();
+    this.scene.add(ambientLight, directionalLight);
+
+    // Load and add the .obj file
+    const loader = new OBJLoader();
+    loader.load(
+      this.data.url, // URL of the .obj file
+      (object) => {
+        // Scale and position the object
+        object.scale.set(0.5, 0.5, 0.5);
+        object.position.set(0, 0, 0);
+        object.rotation.x = Math.PI; // Rotate to ensure correct orientation
+        object.rotation.y = Math.PI; // Rotate to ensure correct orientation
+        this.scene.add(object);
+
+        // Start animation loop
+        this.animate();
+      },
+      undefined,
+      (error) => console.error('Error loading .obj file:', error)
+    );
+
+    // Add OrbitControls for interaction
+    this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+    this.controls.enableDamping = true; // Smooth interaction
+    this.controls.dampingFactor = 0.05;
+    this.controls.enableZoom = true; // Allow zooming
+    this.controls.enablePan = true; // Allow panning
+  }
+
+  animate(): void {
+    requestAnimationFrame(() => this.animate());
+    this.controls.update(); // Update the controls
+    this.renderer.render(this.scene, this.camera); // Render the scene
   }
 
   downloadImage(): void {
@@ -167,145 +117,6 @@ export class ImageDialogComponent implements AfterViewInit {
   onNoClick(): void {
     this.dialogRef.close();
   }
-   showAverageColor() {
-    // Assuming average_color is an array of numbers representing RGB components
-    const { average_color } = this.data.characteristics;
-  
-    if (average_color && average_color.length === 3) {
-      // Extract RGB values
-      const [r, g, b] = average_color;
-  
-      // Create a CSS color string from RGB values
-      const colorString = `rgb(${r}, ${g}, ${b})`;
-  
-      // Get the target div element
-      const colorDisplay = document.getElementById('average-color-display') as HTMLDivElement;
-  
-      if (colorDisplay) {
-        // Apply the color to the div background
-        colorDisplay.style.backgroundColor = colorString;
-      } else {
-        console.error('Element with ID "average-color-display" not found.');
-      }
-    } else {
-      console.error('Invalid average_color data.');
-    }
-  }
-  
-  createHuMomentsChart() {
-    const huMoments = this.data.characteristics.hu_moments;
-    const labels = Array.from({ length: huMoments.length }, (_, i) => `Moment ${i + 1}`);
-  
-    const canvas = document.getElementById('hu-moments-canvas') as HTMLCanvasElement;
-    if (canvas) {
-      new Chart(canvas, {
-        type: 'bar',
-        data: {
-          labels: labels,
-          datasets: [
-            {
-              label: 'Hu Moments',
-              data: huMoments,
-              backgroundColor: 'rgba(75, 192, 192, 0.5)',
-              borderColor: 'rgba(75, 192, 192, 1)',
-              borderWidth: 1,
-            },
-          ],
-        },
-        options: {
-          responsive: true,
-          scales: {
-            y: {
-              beginAtZero: true,
-              title: {
-                display: true,
-                text: 'Value',
-              },
-            },
-          },
-        },
-      });
-    } else {
-      console.error('Canvas for Hu Moments chart not found.');
-    }
-  }
-  
-   createEdgeHistogramChart() {
-    const edgeHistogram = this.data.characteristics.edge_histogram;
-    const labels = Array.from({ length: edgeHistogram.length }, (_, i) => `Bin ${i + 1}`);
-  
-    const canvas = document.getElementById('edge-histogram-canvas') as HTMLCanvasElement;
-    if (canvas) {
-      new Chart(canvas, {
-        type: 'bar',
-        data: {
-          labels: labels,
-          datasets: [
-            {
-              label: 'Edge Histogram',
-              data: edgeHistogram,
-              backgroundColor: 'rgba(153, 102, 255, 0.5)',
-              borderColor: 'rgba(153, 102, 255, 1)',
-              borderWidth: 1,
-            },
-          ],
-        },
-        options: {
-          responsive: true,
-          scales: {
-            y: {
-              beginAtZero: true,
-              title: {
-                display: true,
-                text: 'Frequency',
-              },
-            },
-          },
-        },
-      });
-    } else {
-      console.error('Canvas for Edge Histogram chart not found.');
-    }
-  }
-  
-   createTextureDescriptorsChart() {
-    const textureDescriptors = this.data.characteristics.texture_descriptors;
-    const labels = Array.from({ length: textureDescriptors.length }, (_, i) => `Descriptor ${i + 1}`);
-  
-    const canvas = document.getElementById('texture-descriptors-canvas') as HTMLCanvasElement;
-    if (canvas) {
-      new Chart(canvas, {
-        type: 'bar',
-        data: {
-          labels: labels,
-          datasets: [
-            {
-              label: 'Texture Descriptors',
-              data: textureDescriptors,
-              backgroundColor: 'rgba(255, 159, 64, 0.5)',
-              borderColor: 'rgba(255, 159, 64, 1)',
-              borderWidth: 1,
-            },
-          ],
-        },
-        options: {
-          responsive: true,
-          scales: {
-            y: {
-              beginAtZero: true,
-              title: {
-                display: true,
-                text: 'Value',
-              },
-            },
-          },
-        },
-      });
-    } else {
-      console.error('Canvas for Texture Descriptors chart not found.');
-    }
-  }
 }
-  
   
 

@@ -32,8 +32,9 @@ import { ImageService } from '../Services/image.service';
 export class NavigationComponent {
   constructor(private imageService: ImageService){}
 selectedCategory: any;
-categories: string[] = ['Grass', 'Field','Industry','RiverLake','Forest','Resident','Parking']; // Example categories
-  category!: string | null;
+categories: string[] = [/*'Grass', 'Field','Industry','RiverLake','Forest','Resident','Parking'*/]; // Example categories
+  
+category!: string | null;
   private breakpointObserver = inject(BreakpointObserver);
 // Output event emitter to notify parent components
   isHandset$: Observable<boolean> = this.breakpointObserver.observe(Breakpoints.Handset)
