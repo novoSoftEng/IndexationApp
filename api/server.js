@@ -35,12 +35,22 @@ const imageSchema = new mongoose.Schema({
   category : {type : String },
   uploadDate: { type: Date, default: Date.now },
   characteristics: {
-    color_histogram: [[Number]], // Array of arrays with numerical values for histogram bins
-    dominant_colors: [[Number]], // Array of arrays with RGB values for dominant colors
-    texture_descriptors: [Number], // Array of numerical values for texture descriptors
-    hu_moments: [Number], // Array of numerical values for Hu moments
-    average_color :[Number] ,
-    edge_histogram :  [Number]
+      fourier_coefficients: [Number],
+      zernike_moments: [Number],
+      is_watertight: Boolean,
+      mesh_area:Number,
+      mesh_bounding_box_extents: [
+       Number
+      ],
+      mesh_centroid: [
+       Number
+      ],
+      mesh_volume: Number,
+      num_edges: Number,
+      num_faces: Number,
+      num_vertices: Number,
+      warning: String
+    
   },
 });
 // const Image = mongoose.model("Image", imageSchema);
