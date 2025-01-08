@@ -6,6 +6,7 @@ from pymongo import MongoClient
 from flask_restful import Api, Resource
 import trimesh
 from scipy.ndimage import zoom
+from scipy.spatial.distance import euclidean
 from pyzernike import ZernikeDescriptor
 from dotenv import load_dotenv
 from flask_cors import CORS
@@ -34,49 +35,37 @@ api = Api(app)
 CORS(app)
 
 
-""" def simple_search(img_descriptor, descriptors2, top_n=5,  w1=0.1, w2=0.8, w3=0.1,
-                  frame_weights=(0.7, 0.3), color_weights=(0.4, 0.1, 0.5)):
-    
+def simple_search(img_descriptor, descriptors2, top_n=5, w1=0.5, w2=0.5):
+
     similarities = []
 
     for img2 in descriptors2:
         img2_name = img2['filename']
         img2_desc = img2["characteristics"]
 
-        # Frame distance
-        frame_dist = (
-            frame_weights[0] * euclidean(img_descriptor["hu_moments"], img2_desc["hu_moments"]) +
-            frame_weights[1] * euclidean(img_descriptor["edge_histogram"], img2_desc["edge_histogram"])
-        )
+        # Fourier coefficient distance (using Euclidean distance)
+        fourier_dist = euclidean(np.ravel(img_descriptor["fourier_coefficients"]), np.ravel(img2_desc["fourier_coefficients"]))
 
-        # Color distance
-        color_dist = (
-            color_weights[0] * euclidean(np.ravel(img_descriptor["color_histogram"]), np.ravel(img2_desc["color_histogram"])) +
-            color_weights[1] * euclidean(np.ravel(img_descriptor["average_color"]), np.ravel(img2_desc["average_color"])) +
-            color_weights[2] * euclidean(np.ravel(img_descriptor["dominant_colors"]), np.ravel(img2_desc["dominant_colors"]))
-        )
+        # Zernike moments distance (using Euclidean distance)
+        zernike_dist = euclidean(np.ravel(img_descriptor["zernike_moments"]), np.ravel(img2_desc["zernike_moments"]))
 
-        # Texture distance
-        texture_dist = euclidean(
-            np.ravel(img_descriptor["texture_descriptors"]),
-            np.ravel(img2_desc["texture_descriptors"])
-        )
+        # Combine distances with weights
+        total_distance = w1 * fourier_dist + w2 * zernike_dist
 
-        total_distance = (w1 * frame_dist + w2 * color_dist + w3 * texture_dist) / 3
         similarities.append({'filename': img2_name, 'score': total_distance})
 
+    # Sort and return the top_n most similar images
     top_similar = sorted(similarities, key=lambda x: x['score'])[:top_n]
 
-    return top_similar """
+    return top_similar
 
 
-# Helper function: Load OBJ file from request
+# Load OBJ file from request
 def load_obj_from_request(file):
     mesh = trimesh.load(file, file_type='obj')
     return mesh
 
 def mesh_info(mesh):
-    # Get the number of vertices and faces
     num_vertices = len(mesh.vertices)
     num_faces = len(mesh.faces)
     num_edges = len(mesh.edges)
@@ -87,7 +76,7 @@ def mesh_info(mesh):
     mesh_centroid = mesh.centroid
     return num_vertices, num_faces, num_edges, is_watertight, mesh_volume, mesh_area, mesh_bounding_box_extents, mesh_centroid
 
-# Helper function: Convert to Voxel Grid
+# HConvert to Voxel Grid
 def mesh_to_voxel_grid(mesh, resolution=50):
     # Calculate the voxel size (pitch) based on mesh bounds and resolution
     bounds = mesh.bounds
@@ -119,6 +108,44 @@ def calculate_zernike_moments(voxel_grid, max_order=8):
     coefficients = descriptor.get_coefficients()
     return coefficients
 
+def calculate_obj_descriptors(mesh):
+    # Load and process the mesh
+    # mesh = load_obj_from_request(obj)
+
+    num_vertices, num_faces, num_edges, is_watertight, mesh_volume, mesh_area, mesh_bounding_box_extents, mesh_centroid = mesh_info(mesh)
+
+    # Check if the mesh is watertight
+    warning_message = None
+    if not mesh.is_watertight:
+        warning_message = "The 3D model is not watertight. Descriptors may not be accurate."
+
+    # Convert to voxel grid
+        voxel_grid = mesh_to_voxel_grid(mesh)
+
+    fourier_coeffs = calculate_fourier_coefficients(voxel_grid)
+    zernike_moments = calculate_zernike_moments(voxel_grid, max_order=8)
+
+    # Convert NumPy arrays to lists
+    fourier_coeffs = list(fourier_coeffs)
+    zernike_moments = zernike_moments.astype(float).tolist()
+
+    # Store results
+    results = {
+        'num_vertices': num_vertices,
+        'num_faces': num_faces,
+        'num_edges': num_edges,
+        'is_watertight': is_watertight,
+        'mesh_volume': mesh_volume,
+        'mesh_area': mesh_area,
+        'mesh_bounding_box_extents': mesh_bounding_box_extents.tolist(),
+        'mesh_centroid': mesh_centroid.tolist(),
+        'warning': warning_message,
+        'fourier_coefficients': fourier_coeffs[:10],
+        'zernike_moments': zernike_moments
+    }
+
+    return results
+
 class DescriptorService(Resource):
     def post(self):
         """Calculate descriptors for uploaded 3D OBJ files."""
@@ -134,136 +161,60 @@ class DescriptorService(Resource):
                 continue
 
             try:
-                # Load and process the mesh
                 mesh = load_obj_from_request(file)
+                results[file.filename] = calculate_obj_descriptors(mesh)
 
-                # Get mesh information
-                num_vertices, num_faces, num_edges, is_watertight, mesh_volume, mesh_area, mesh_bounding_box_extents, mesh_centroid = mesh_info(mesh)
-
-                # Check if the mesh is watertight
-                warning_message = None
-                if not mesh.is_watertight:
-                    warning_message = "The 3D model is not watertight. Descriptors may not be accurate."
-
-                # Convert to voxel grid
-                voxel_grid = mesh_to_voxel_grid(mesh)
-
-                fourier_coeffs = calculate_fourier_coefficients(voxel_grid)
-                zernike_moments = calculate_zernike_moments(voxel_grid, max_order=8)
-
-                # Convert NumPy arrays to lists
-                fourier_coeffs = list(fourier_coeffs)
-                zernike_moments = zernike_moments.astype(float).tolist()
-
-                # Store results
-                results[file.filename] = {
-                    'num_vertices': num_vertices,
-                    'num_faces': num_faces,
-                    'num_edges': num_edges,
-                    'is_watertight': is_watertight,
-                    'mesh_volume': mesh_volume,
-                    'mesh_area': mesh_area,
-                    'mesh_bounding_box_extents': mesh_bounding_box_extents.tolist(),
-                    'mesh_centroid': mesh_centroid.tolist(),
-                    'warning': warning_message,
-                    'fourier_coefficients': fourier_coeffs[:10],
-                    'zernike_moments': zernike_moments
-                }
             except Exception as e:
-                # Handle errors for individual files
                 results[file.filename] = {"error": str(e)}
 
         return jsonify({"message": "Descriptors calculated", "results": results})
 
 
-""" class SearchService(Resource):
+class SearchService(Resource):
     def post(self):
         try:
             # Check if an image is uploaded
-            if "image" not in request.files:
+            if "file" not in request.files:
                 return {"error": "Image file is required"}, 400
 
-            # Read the image from the request
-            file = request.files["image"]
-            image = cv2.imdecode(np.frombuffer(file.read(), np.uint8), cv2.IMREAD_COLOR)
+            # Read the object from the request
+            file = request.files["file"]
+            mesh = load_obj_from_request(file)
 
-            if image is None:
+            if mesh is None:
                 return {"error": "Invalid image file"}, 400
 
             # Calculate descriptors for the uploaded image
-            query_descriptor = calculate_img_descriptors(image)
+            try:
+                query_descriptor = calculate_obj_descriptors(mesh)
+            except Exception as e:
+                return {"error": f"Failed to calculate descriptors: {str(e)}"}, 500
 
             # Fetch all descriptors from MongoDB
-            descriptors2 = list(collection.find({}))  # Exclude _id field for simplicity
+            try:
+                descriptors2 = list(collection.find({}, {"_id": 0}))  # Exclude _id field
+            except Exception as e:
+                return {"error": f"Failed to fetch descriptors from database: {str(e)}"}, 500
 
-            # Fetch weights from MongoDB
-            weights_doc = w_collection.find_one({"type": "weights"})
+            # Default weights for Fourier coefficients and Zernike moments
+            w1, w2 = 0.5, 0.5
 
-            if not weights_doc:
-                # Initialize consistent default weights if not found
-                w1, w2, w3 = 0.1, 0.8, 0.1  # Updated based on your preferred values
-                frame_weights = (0.7, 0.3)  # Tuple format as per `simple_search` specification
-                color_weights = (0.4, 0.1, 0.5)  # Tuple format as per `simple_search` specification
-            else:
-                w1 = weights_doc.get("w1", 0.1)
-                w2 = weights_doc.get("w2", 0.5)
-                w3 = weights_doc.get("w3", 0.4)
-                frame_weights = weights_doc.get("frame_weights", (0.7, 0.3))
-                color_weights = weights_doc.get("color_weights", (0.4, 0.1, 0.5))
-
-
-            if "characteristics" in request.form:
-                # Extract relevant and irrelevant descriptors from the request
-                characteristics = json.loads( request.form.get("characteristics"))
-                relevant_descriptors = characteristics.get("relevant", [])
-                irrelevant_descriptors = characteristics.get("irrelevant", [])
-
-                # Recalculate weights using query_point_movement2
-                try:
-                    w1_new, w2_new, w3_new, frame_weights_new, color_weights_new = query_point_movement2(
-                        w1, w2, w3, frame_weights, color_weights,
-                        relevant_descriptors, irrelevant_descriptors,
-                        alpha=1, beta=0.001, gamma=0.001
-                    )
-                except Exception as e: 
-                    return {"error calculating new_weights": str(e)}, 500
-
-                # Perform the search with recalculated weights
+            # Perform the search using the simple_search function
+            try:
                 top_similar = simple_search(
-                    query_descriptor, descriptors2, top_n=10,
-                    w1=w1_new, w2=w2_new, w3=w3_new,
-                    frame_weights=frame_weights_new, color_weights=color_weights_new
+                    img_descriptor=query_descriptor,
+                    descriptors2=descriptors2,
+                    top_n=5, w1=w1, w2=w2
                 )
+            except Exception as e:
+                return {"error": f"Failed to perform search: {str(e)}"}, 500
 
-                # Save new weights to the database
-                w_collection.update_one(
-                    {"type": "weights"},
-                    {"$set": {
-                        "w1": w1_new ,
-                        "w2":w2_new,
-                        "w3": w3_new,
-                        "frame_weights": frame_weights_new,
-                        "color_weights": color_weights_new
-                    }},
-                    upsert=True  # Create the document if it doesn't exist
-                )
-            else:
-                # Perform the search with existing weights
-                try:
-                    top_similar = simple_search(
-                        query_descriptor, descriptors2, top_n=10,
-                        w1=w1, w2=w2, w3=w3,
-                        frame_weights=frame_weights, color_weights=color_weights
-                    )
-                except Exception as e:
-                     return {"error calculating top similiar": str(e) , "value descriptors" :str(descriptors2) }, 500
-
-            # Return results
-            return top_similar, 200
+            # Return the results
+            return {"results": top_similar}, 200
 
         except Exception as e:
-            return {"error": str(e)}, 500
- """
+            return {"error": f"Unexpected server error: {str(e)}"}, 500
+
 
 # Register API Endpoints
 api.add_resource(DescriptorService, '/calculate-descriptors')
