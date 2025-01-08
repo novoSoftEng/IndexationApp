@@ -48,7 +48,7 @@ renderObjFiles(): void {
 
     // Create camera with a side perspective
     const camera = new THREE.PerspectiveCamera(50, canvas.offsetWidth / canvas.offsetHeight, 0.1, 5000);
-    camera.position.set(10, 50, 10); // Position the camera slightly above and to the side
+    camera.position.set(0, 80, 0); // Position the camera slightly above and to the side
     camera.lookAt(0, 0, 0); // Ensure the camera looks at the center of the scene
 
     // Create renderer
@@ -68,7 +68,9 @@ renderObjFiles(): void {
       (object) => {
         // Scale down the object to make it smaller
         object.scale.set(0.5, 0.5, 0.5); // Reduce scale to 50% of its original size
-        //object.rotation.y = Math.PI ; // Rotate the object 90 degrees on the Y-axis for a side view
+        object.rotation.x = Math.PI ; // Rotate the object 90 degrees on the Y-axis for a side view
+        object.rotation.y = Math.PI
+
         
         object.position.set(0, 0, 0); // Center the object in the scene
         scene.add(object);
