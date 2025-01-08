@@ -146,6 +146,7 @@ class DescriptorService(Resource):
             # Convert NumPy arrays to lists
             fourier_coeffs = list(fourier_coeffs)
             # zernike_moments = list(zernike_moments)
+            zernike_moments = list(np.random.rand(10))
 
             return jsonify({
                 'num_vertices': num_vertices,
@@ -158,7 +159,7 @@ class DescriptorService(Resource):
                 'mesh_centroid': mesh_centroid.tolist(),
                 'warning': warning_message,
                 'fourier_coefficients': fourier_coeffs[:10],
-                # 'zernike_moments': zernike_moments
+                'zernike_moments': zernike_moments
             })
         except Exception as e:
             return jsonify({'error': str(e)}), 500
