@@ -27,7 +27,6 @@ if not os.path.exists(UPLOAD_FOLDER):
 client = MongoClient(MONGO_URI)
 db = client[DATABASE_NAME]
 collection = db[COLLECTION_NAME]
-w_collection = db['weights']
 
 
 app = Flask(__name__)
@@ -50,7 +49,7 @@ def simple_search(img_descriptor, descriptors2, top_n=5, w1=0.5, w2=0.5):
         zernike_dist = euclidean(np.ravel(img_descriptor["zernike_moments"]), np.ravel(img2_desc["zernike_moments"]))
 
         # Combine distances with weights
-        total_distance = w1 * fourier_dist + w2 * zernike_dist
+        total_distance = (w1 * fourier_dist + w2 * zernike_dist) / 2
 
         similarities.append({'filename': img2_name, 'score': total_distance})
 
@@ -109,9 +108,7 @@ def calculate_zernike_moments(voxel_grid, max_order=8):
     return coefficients
 
 def calculate_obj_descriptors(mesh):
-    # Load and process the mesh
-    # mesh = load_obj_from_request(obj)
-
+    # get mesh info
     num_vertices, num_faces, num_edges, is_watertight, mesh_volume, mesh_area, mesh_bounding_box_extents, mesh_centroid = mesh_info(mesh)
 
     # Check if the mesh is watertight
@@ -184,7 +181,7 @@ class SearchService(Resource):
             if mesh is None:
                 return {"error": "Invalid image file"}, 400
 
-            # Calculate descriptors for the uploaded image
+            # Calculate descriptors for the uploaded object
             try:
                 query_descriptor = calculate_obj_descriptors(mesh)
             except Exception as e:
@@ -218,7 +215,7 @@ class SearchService(Resource):
 
 # Register API Endpoints
 api.add_resource(DescriptorService, '/calculate-descriptors')
-# api.add_resource(SearchService, '/search')
+api.add_resource(SearchService, '/search')
 
 if __name__ == '__main__':
     app.run(debug=True)
