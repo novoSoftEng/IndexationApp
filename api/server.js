@@ -109,7 +109,7 @@ app.post("/upload", upload.array("images"), async (req, res) => {
     // Append all files to the FormData object
     req.files.forEach((file) => {
       const filePath = path.join(UPLOAD_FOLDER, file.filename);
-      formData.append('images', fs.createReadStream(filePath), file.originalname); // Append each file
+      formData.append('files', fs.createReadStream(filePath), file.originalname); // Append each file
     });
 
     // Make a POST request to the ImagesService to get characteristics for all images at once
