@@ -1,7 +1,7 @@
 .dialog-content {
   display: flex;
   flex-direction: column;
-  gap: 16px; /* Add spacing between elements */
+  gap: 11px; /* Add spacing between elements */
 }
 
 .image-wrapper {
@@ -12,8 +12,10 @@
   margin-bottom: 16px; /* Add space below the image */
 }
 
-.full-screen-image {
-  max-width: 100%;
+.full-screen-canvas {
+  width: 500px;
+  height: 500px;
+  max-width: 500px !important;
   max-height: 1000px; /* Prevent overly large images */
   border-radius: 8px; /* Add rounded corners */
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Add a subtle shadow */

@@ -75,6 +75,7 @@ export class ImageDialogComponent implements AfterViewInit {
         object.scale.set(0.5, 0.5, 0.5);
         object.position.set(0, 0, 0);
         object.rotation.x = Math.PI; // Rotate to ensure correct orientation
+        object.rotation.y = Math.PI; // Rotate to ensure correct orientation
         this.scene.add(object);
 
         // Start animation loop
