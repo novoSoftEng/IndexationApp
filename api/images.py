@@ -42,24 +42,17 @@ def simple_search(img_descriptor, descriptors2, top_n=5, w1=0.5, w2=0.5):
         img2_name = img2['filename']
         img2_desc = img2["characteristics"]
 
-        # Fourier coefficient distance (using Euclidean distance)
         fourier_dist = euclidean(np.ravel(img_descriptor["fourier_coefficients"]), np.ravel(img2_desc["fourier_coefficients"]))
-
-        # Zernike moments distance (using Euclidean distance)
         zernike_dist = euclidean(np.ravel(img_descriptor["zernike_moments"]), np.ravel(img2_desc["zernike_moments"]))
 
-        # Combine distances with weights
         total_distance = (w1 * fourier_dist + w2 * zernike_dist) / 2
-
         similarities.append({'filename': img2_name, 'score': total_distance})
 
-    # Sort and return the top_n most similar images
     top_similar = sorted(similarities, key=lambda x: x['score'])[:top_n]
 
     return top_similar
 
 
-# Load OBJ file from request
 def load_obj_from_request(file):
     mesh = trimesh.load(file, file_type='obj')
     return mesh
@@ -137,7 +130,7 @@ def calculate_obj_descriptors(mesh):
         'mesh_bounding_box_extents': mesh_bounding_box_extents.tolist(),
         'mesh_centroid': mesh_centroid.tolist(),
         'warning': warning_message,
-        'fourier_coefficients': fourier_coeffs[:10],
+        'fourier_coefficients': fourier_coeffs,
         'zernike_moments': zernike_moments
     }
 
