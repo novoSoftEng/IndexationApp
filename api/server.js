@@ -32,6 +32,7 @@ mongoose.connect(process.env.MONGO_URI, {
 // MongoDB schema and model
 const imageSchema = new mongoose.Schema({
   filename: { type: String, required: true },
+  thumbnail : {type : String},
   category : {type : String },
   uploadDate: { type: Date, default: Date.now },
   characteristics: {
@@ -81,7 +82,13 @@ const storage = multer.diskStorage({
     cb(null, file.originalname);
   },
 });
-const upload = multer({ storage });
+const upload = multer({ 
+  storage,
+}).fields([
+  { name: 'objFiles' }, // Allow up to 20 .obj files
+  { name: 'thumbnails' }, // Allow up to 20 thumbnails
+]);
+
 
 // Middleware to parse JSON
 app.use(express.json());
@@ -92,69 +99,91 @@ async function listImages() {
   return files.filter((file) => fs.statSync(path.join(UPLOAD_FOLDER, file)).isFile());
 }
 
-// Upload images
-app.post("/upload", upload.array("images"), async (req, res) => {
-  if (!req.files || req.files.length === 0) {
-    return res.status(400).json({ message: "No images provided" });
+// Upload images with their corresponding thumbnails
+app.post("/upload",  async (req, res) => {
+  
+  upload(req, res, async (err) => {
+    if (err instanceof multer.MulterError) {
+      return res.status(400).json({ message: `Multer error: ${err.message}` });
+    } else if (err) {
+      return res.status(500).json({ message: `Server error: ${err.message}` });
+    }
+
+    const { files } = req;
+    const category = req.body.category;
+
+    if (!files || !files.objFiles || !files.thumbnails) {
+      return res.status(400).json({ message: "Both .obj files and thumbnails are required." });
+    }
+
+    // Separate objFiles and thumbnails
+    const objFiles = files.objFiles;
+    const thumbnails = files.thumbnails;
+
+
+  // Pair .obj files with their corresponding thumbnails based on filename
+  const objThumbnailPairs = objFiles.map((objFile) => {
+    const thumbnail = thumbnails.find(
+      (thumb) =>
+        thumb.originalname.split(".")[0] === objFile.originalname.split(".")[0]
+    );
+    return { objFile, thumbnail };
+  });
+
+  // Ensure every .obj file has a corresponding thumbnail
+  const unpairedFiles = objThumbnailPairs.filter(({ thumbnail }) => !thumbnail);
+  if (unpairedFiles.length > 0) {
+    return res.status(400).json({
+      message: "Some .obj files are missing corresponding thumbnails",
+      unpairedFiles: unpairedFiles.map((pair) => pair.objFile.originalname),
+    });
   }
 
-  const uploadedFiles = req.files.map((file) => file.originalname);
-  const category = req.body.category;
-  console.log(category);
-
   try {
-    // Create a new FormData object to send all files
+    // Create FormData to send .obj files to the ImagesService
     const formData = new FormData();
-
-    // Append all files to the FormData object
-    req.files.forEach((file) => {
+    objFiles.forEach((file) => {
       const filePath = path.join(UPLOAD_FOLDER, file.filename);
-      formData.append('files', fs.createReadStream(filePath), file.originalname); // Append each file
+      formData.append("files", fs.createReadStream(filePath), file.originalname);
     });
 
-    // Make a POST request to the ImagesService to get characteristics for all images at once
+    // POST request to ImagesService for descriptor calculation
     const response = await fetch(`http://${ImagesService}/calculate-descriptors`, {
       method: "POST",
-      headers: formData.getHeaders(), // Set headers from FormData
-      body: formData, // Send all files in the body of the request
+      headers: formData.getHeaders(),
+      body: formData,
     });
 
     if (!response.ok) {
-      throw new Error(`Error calculating characteristics: ${response.statusText}`);
+      throw new Error(`Error calculating descriptors: ${response.statusText}`);
     }
 
-    // Parse the JSON response from the ImagesService
     const { results } = await response.json();
 
-    // Store characteristics for each file
-    const imageDocs = {};
-    req.files.forEach((file) => {
-      imageDocs[file.filename] = results[file.filename];
-    });
-
-    // Save all image metadata and characteristics to MongoDB
-    const mongoDocs = Object.entries(imageDocs).map(([filename, characteristics]) => ({
-      filename,
-      category : category,
-      characteristics: characteristics
-      
+    // Prepare MongoDB documents with paired data
+    const mongoDocs = objThumbnailPairs.map(({ objFile, thumbnail }) => ({
+      filename: objFile.originalname,
+      thumbnail: thumbnail.originalname,
+      category,
+      characteristics: results[objFile.originalname],
     }));
-    try {
-      const savedDocs = await Image.insertMany(mongoDocs);
-      console.log("Documents successfully saved:", savedDocs);
-    } catch (saveError) {
-      console.error("Error during insertMany:", saveError);
-    }
-    
 
-    res.status(201).json({ message: "Images uploaded and processed successfully", files: uploadedFiles, results: imageDocs });
+    // Save all metadata and characteristics to MongoDB
+    await Image.insertMany(mongoDocs);
+
+    res.status(201).json({
+      message: "Files and thumbnails uploaded and processed successfully",
+      files: objThumbnailPairs.map(({ objFile, thumbnail }) => ({
+        objFile: objFile.originalname,
+        thumbnail: thumbnail.originalname,
+      })),
+    });
   } catch (error) {
-    console.error("Error processing images:", error.message);
-    res.status(500).json({ message: "Error processing images", error: error.message });
+    console.error("Error processing files:", error.message);
+    res.status(500).json({ message: "Error processing files", error: error.message });
   }
 });
-
-
+});
 // Download an image or list all images
 app.get("/download/:filename?", async (req, res) => {
   const { filename } = req.params;

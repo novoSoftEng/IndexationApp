@@ -1,27 +1,38 @@
 <div class="container">
-  <h2>Image Upload</h2>
+  <h2>Image Upload with Thumbnails</h2>
 
+  <!-- Upload Section -->
   <div cdkDropList #uploadList="cdkDropList" [cdkDropListData]="uploadQueue" class="list"
        (cdkDropListDropped)="drop($event)">
-    <div class="upload-area" (click)="fileInput.click()" (drop)="onFileDrop($event)">
+    <div class="upload-area" (click)="fileInput.click()" (drop)="onFileDrop($event)" (dragover)="allowDrop($event)">
       <input type="file" hidden (change)="onFileSelect($event)" #fileInput multiple>
       <p>Drag & drop your images here or click to upload</p>
     </div>
+
+    <!-- Display Files -->
     <div class="list-item" *ngFor="let image of uploadQueue" cdkDrag>
       <div *ngIf="image.file.name.endsWith('.obj')">
-        <div id="preview-{{image.id}}" class="preview-3d-container"></div>
+        <div id="preview-{{ image.id }}" class="preview-3d-container"></div>
       </div>
+      <img *ngIf="image.thumbnailUrl" [src]="image.thumbnailUrl" alt="Thumbnail" class="thumbnail">
+      <span>{{ image.file.name }}</span>
       <button mat-icon-button (click)="removeImage(image)">
         <mat-icon>delete</mat-icon>
       </button>
     </div>
   </div>
+
+  <!-- Select Folder for Thumbnails -->
+  <div class="folder-section">
+    <label for="folder-input">Choose Thumbnail Folder:</label>
+    <input type="file" id="folder-input" (change)="onFolderSelect($event)" webkitdirectory directory>
+  </div>
+
+  <!-- Category Selector -->
   <div>
     <mat-select [(ngModel)]="category" placeholder="Select a category">
       <mat-option *ngFor="let category of categories" [value]="category">{{ category }}</mat-option>
     </mat-select>
-    <button class="save" (click)="save()">
-      Save to Gallery
-    </button>
+    <button class="save" (click)="save()">Save to Gallery</button>
   </div>
 </div>
