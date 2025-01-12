@@ -125,7 +125,7 @@ app.post("/upload",  async (req, res) => {
   const objThumbnailPairs = objFiles.map((objFile) => {
     const thumbnail = thumbnails.find(
       (thumb) =>
-        thumb.originalname.split(".")[0] === objFile.originalname.split(".")[0]
+        thumb.originalname.split(".")[0].toLowerCase() === objFile.originalname.split(".")[0].toLowerCase()
     );
     return { objFile, thumbnail };
   });
