@@ -20,17 +20,17 @@ import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
   styleUrl: './gallery.component.css'
 })
 export class GalleryComponent implements OnInit{
-images: any;
+  images: { obj: { filename: string; url: string }; thumbnail: { filename: string; url: string } | null }[] = [];
+  pageSize = 8; // Number of images per page
+  pageIndex = 0; // Initial page index
   dialogRef: any;
-  pageSize: number = 8; // Number of images per page
-  pageIndex: number = 0; // Initial page index
 
 constructor(public dialog: MatDialog, private imageService: ImageService) {
 
     
 }
 ngAfterViewInit(): void {
-  this.renderObjFiles();
+ // this.renderObjFiles();
 }
 
 renderObjFiles(): void {
@@ -104,22 +104,50 @@ get paginatedImages(): any[] {
   ngOnInit(): void {
     this.imageService.getAllImages().pipe(
       map((response: { images: string[] }) => response.images), // Extract the images array
-      switchMap((images: string[]) =>
-        forkJoin(
-          images.map((filename: string) =>
-            this.imageService.downloadFile(filename).pipe(
-              map((blob) => ({
-                filename,
-                url: URL.createObjectURL(blob),
-              }))
-            )
+      switchMap((images: string[]) => {
+        // Separate .obj and .jpg files
+        const objFiles = images.filter((filename) => filename.endsWith('.obj'));
+        const thumbnailFiles = images.filter((filename) => filename.endsWith('.jpg'));
+    
+        // Map .obj files to their matching thumbnails
+        const matchedFiles = objFiles.map((objFile) => {
+          const baseName = objFile.split('.').slice(0, -1).join('.').toLowerCase(); // Base name without extension
+          const matchingThumbnail = thumbnailFiles.find(
+            (thumbnail) => thumbnail.split('.').slice(0, -1).join('.').toLowerCase() === baseName
+          );
+          return { objFile, thumbnail: matchingThumbnail || null };
+        });
+    
+        // Download files
+        return forkJoin(
+          matchedFiles.map(({ objFile, thumbnail }) =>
+            forkJoin({
+              obj: this.imageService.downloadFile(objFile).pipe(
+                map((blob) => ({
+                  filename: objFile,
+                  url: URL.createObjectURL(blob),
+                }))
+              ),
+              thumbnail: thumbnail
+                ? this.imageService.downloadFile(thumbnail).pipe(
+                    map((blob) => ({
+                      filename: thumbnail,
+                      url: URL.createObjectURL(blob),
+                    }))
+                  )
+                : of(null), // Use `of(null)` for missing thumbnails
+            })
           )
-        )
-      )
+        );
+      })
     ).subscribe((enhancedImages) => {
       this.images = enhancedImages; // Store the final array in the component
-      console.log("Enhanced images", this.images);
+      console.log("Enhanced images with thumbnails", this.images);
     });
+    
+    
+
+    
   
       // Listen for category changes
       this.imageService.selectedCategory$
@@ -170,23 +198,23 @@ get paginatedImages(): any[] {
   }
 
 
-delete(deletedImage: any): void {
-  console.log('Image deleted in parent:', deletedImage);
-  // Update the DOM or perform other actions
-  this.images = this.images.filter((img: any) => img.image !== deletedImage.image);
-  console.log(this.images);
-}
-  openDialog(image: any): void {
-   this.dialogRef =  this.dialog.open(ImageDialogComponent, {
-      width: '80%',
-      height: '80%',
-      data: image
-    });
-    this.dialogRef.afterClosed().subscribe((result: any) => {
-      if (result?.action === 'delete') {
-        this.delete(result);
-      }
-    });
+  delete(deletedImage: any): void {
+    console.log('Image deleted in parent:', deletedImage);
+    this.images = this.images.filter((img:any) => img.obj.filename !== deletedImage.filename);
+    console.log(this.images);
   }
+openDialog(image: any): void {
+  this.dialogRef = this.dialog.open(ImageDialogComponent, {
+    width: '80%',
+    height: '80%',
+    data: image.obj, // Pass the .obj file data to the dialog
+  });
+  this.dialogRef.afterClosed().subscribe((result: any) => {
+    if (result?.action === 'delete') {
+      this.delete(result);
+    }
+  });
+}
+
 
 }
