@@ -97,10 +97,7 @@ const characteristics = {
   }
 
   private loadImage(file: File): void {
-    if (!file.type.startsWith('image/')) {
-      alert('Please upload a valid image file.');
-      return;
-    }
+    
     
     const reader = new FileReader();
     reader.onload = () => {
@@ -115,10 +112,11 @@ const characteristics = {
   private getRes(file: File,characteristics ?:any): void {
     this.imageService.Search(file,characteristics).subscribe((searchResults: SearchResults[]) => {
       this.results = searchResults; // Store the results in the component
+      console.log(this.results)
   
       // For each result, fetch the associated image as a Blob
       this.results.forEach((result) => {
-        this.imageService.downloadFile(result.filename).subscribe(
+        this.imageService.downloadFile(result.thumbnail).subscribe(
           (blob) => {
             // Convert Blob to an Object URL for display
             result.image = URL.createObjectURL(blob);

@@ -76,7 +76,7 @@ downloadFile(filename: string): Observable<Blob> {
     const formData: FormData = new FormData();
     
     // Append each file to the FormData object
-    formData.append('image', file, file.name);
+    formData.append('file', file, file.name);
     if(characteristics){
       formData.append('characteristics',JSON.stringify(characteristics))
     }

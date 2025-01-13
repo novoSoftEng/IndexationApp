@@ -46,7 +46,7 @@ def simple_search(img_descriptor, descriptors2, top_n=5, w1=0.5, w2=0.5):
         zernike_dist = euclidean(np.ravel(img_descriptor["zernike_moments"]), np.ravel(img2_desc["zernike_moments"]))
 
         total_distance = (w1 * fourier_dist + w2 * zernike_dist) / 2
-        similarities.append({'filename': img2_name, 'score': total_distance})
+        similarities.append({'filename': img2_name , 'thumbnail' : img2['thumbnail'], 'score': total_distance})
 
     top_similar = sorted(similarities, key=lambda x: x['score'])[:top_n]
 
@@ -200,7 +200,7 @@ class SearchService(Resource):
                 return {"error": f"Failed to perform search: {str(e)}"}, 500
 
             # Return the results
-            return {"results": top_similar}, 200
+            return top_similar, 200
 
         except Exception as e:
             return {"error": f"Unexpected server error: {str(e)}"}, 500
