@@ -35,21 +35,55 @@ CORS(app)
 
 
 def simple_search(img_descriptor, descriptors2, top_n=5, w1=0.5, w2=0.5):
-
     similarities = []
 
     for img2 in descriptors2:
         img2_name = img2['filename']
-        img2_desc = img2["characteristics"]
+        img2_desc = img2.get("characteristics", {})
 
-        fourier_dist = euclidean(np.ravel(img_descriptor["fourier_coefficients"]), np.ravel(img2_desc["fourier_coefficients"]))
-        zernike_dist = euclidean(np.ravel(img_descriptor["zernike_moments"]), np.ravel(img2_desc["zernike_moments"]))
+        try:
+            # Convert query descriptors to NumPy arrays
+            query_fourier = np.array(img_descriptor["fourier_coefficients"])
+            query_zernike = np.array(img_descriptor["zernike_moments"])
 
-        total_distance = (w1 * fourier_dist + w2 * zernike_dist) / 2
-        similarities.append({'filename': img2_name , 'thumbnail' : img2['thumbnail'], 'category':img2['category'], 'score': total_distance})
+            # Convert database descriptors to NumPy arrays
+            db_fourier = np.array(img2_desc["fourier_coefficients"])
+            db_zernike = np.array(img2_desc["zernike_moments"])
 
+            # Debugging output for descriptor sizes
+            print(f"Processing {img2_name}:")
+            print(f"Query Fourier size: {query_fourier.size}, DB Fourier size: {db_fourier.size}")
+            print(f"Query Zernike size: {query_zernike.size}, DB Zernike size: {db_zernike.size}")
+
+            # Ensure descriptors are valid
+            if query_fourier.size == 0 or db_fourier.size == 0:
+                print(f"Invalid Fourier coefficients for {img2_name}. Skipping.")
+                continue
+            if query_zernike.size == 0 or db_zernike.size == 0:
+                print(f"Invalid Zernike moments for {img2_name}. Skipping.")
+                continue
+
+            # Calculate distances
+            fourier_dist = euclidean(query_fourier, db_fourier)
+            zernike_dist = euclidean(query_zernike, db_zernike)
+
+            # Weighted distance
+            total_distance = (w1 * fourier_dist + w2 * zernike_dist) / 2
+
+            similarities.append({
+                'filename': img2_name,
+                'thumbnail': img2['thumbnail'],
+                'category': img2['category'],
+                'score': total_distance
+            })
+
+        except KeyError as e:
+            print(f"Missing descriptor key in {img2_name}: {str(e)}. Skipping.")
+        except Exception as e:
+            print(f"Error processing {img2_name}: {str(e)}. Skipping.")
+
+    # Sort and return top results
     top_similar = sorted(similarities, key=lambda x: x['score'])[:top_n]
-
     return top_similar
 
 
