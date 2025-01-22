@@ -4,5 +4,6 @@
 .angular/
 .vscode/
 uploaded_images/
-
+Transformed_objs/
+/api/Transformed_objs/
 
