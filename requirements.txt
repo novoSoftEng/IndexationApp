@@ -1,0 +1,11 @@
+Flask==3.1.0
+Flask_Cors==5.0.0
+Flask_RESTful==0.3.10
+numpy==2.2.2
+opencv_python==4.10.0.84
+pymongo==4.10.1
+rich==13.9.4
+scipy==1.15.1
+setuptools==75.5.0
+typing_extensions==4.12.2
+Werkzeug==3.1.3
