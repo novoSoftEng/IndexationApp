@@ -4,8 +4,8 @@
               <input type="file" hidden (change)="onFileSelect($event)" #fileInput>
               <p>Drag & drop your image here or click to upload</p>
             </div>
-            <div class="list-item" *ngIf="image">
-              <img [src]="image.preview" alt="Preview" class="preview-image" />
+            <div class="list-item">
+              <canvas id="objPreview"></canvas>
             </div>
             
         </div>

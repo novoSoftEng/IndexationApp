@@ -8,6 +8,9 @@ import { ImageService } from '../Services/image.service';
 import { MatButtonModule } from '@angular/material/button';
 import {MatCardModule} from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
+import * as THREE from 'three';
+import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 @Component({
   selector: 'app-search',
   standalone: true,
@@ -16,6 +19,67 @@ import { MatIconModule } from '@angular/material/icon';
   styleUrl: './search.component.css'
 })
 export class SearchComponent {
+  private renderer!: THREE.WebGLRenderer;
+  private camera!: THREE.PerspectiveCamera;
+  private scene!: THREE.Scene;
+  private controls!: OrbitControls;
+
+  create3DPreview(file: File): void {
+    const canvas = document.getElementById('objPreview') as HTMLCanvasElement;
+    if (!canvas) {
+      console.error('Canvas element not found.');
+      return;
+    }
+
+    // Set canvas size
+    canvas.width = 400;
+    canvas.height = 400;
+
+    // Initialize Three.js scene
+    this.scene = new THREE.Scene();
+    this.scene.background = new THREE.Color(0xf0f0f0);
+
+    // Initialize camera
+    this.camera = new THREE.PerspectiveCamera(75, canvas.width / canvas.height, 0.1, 1000);
+    this.camera.position.z = 5;
+
+    // Initialize renderer
+    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    this.renderer.setSize(canvas.width, canvas.height);
+
+    // Add lighting
+    const light = new THREE.DirectionalLight(0xffffff, 1);
+    light.position.set(1, 1, 1).normalize();
+    this.scene.add(light);
+
+    // Load the .OBJ file
+    const loader = new OBJLoader();
+    loader.load(
+      URL.createObjectURL(file),
+      (object) => {
+        object.scale.set(1, 1, 1); // Adjust scale if necessary
+        this.scene.add(object);
+
+        // Animate the object
+        const animate = () => {
+          requestAnimationFrame(animate);
+          object.rotation.y += 0.01;
+          this.controls.update();
+          this.renderer.render(this.scene, this.camera);
+        };
+        animate();
+      },
+      undefined,
+      (error) => console.error('Error loading OBJ file:', error)
+    );
+
+    // Initialize OrbitControls for interaction
+    this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+    this.controls.enableDamping = true;
+    this.controls.dampingFactor = 0.05;
+    this.controls.enableZoom = true;
+  }
+
   Search() {
     const likedDetails$ = Array.from(this.likedIds).map((filename) =>
       this.imageService.getImageDetails(filename.filename)
@@ -80,6 +144,7 @@ const characteristics = {
     if (input.files && input.files.length > 0) {
       this.loadImage(input.files[0]);
       this.getRes(input.files[0]);
+      this.create3DPreview(input.files[0])
 
     }
   }
@@ -89,6 +154,7 @@ const characteristics = {
     if (event.dataTransfer?.files && event.dataTransfer.files.length > 0) {
       this.loadImage(event.dataTransfer.files[0]);
       this.getRes(event.dataTransfer.files[0]);
+      this.create3DPreview(event.dataTransfer.files[0])
     }
   }
 
@@ -97,10 +163,7 @@ const characteristics = {
   }
 
   private loadImage(file: File): void {
-    if (!file.type.startsWith('image/')) {
-      alert('Please upload a valid image file.');
-      return;
-    }
+    
     
     const reader = new FileReader();
     reader.onload = () => {
@@ -115,10 +178,11 @@ const characteristics = {
   private getRes(file: File,characteristics ?:any): void {
     this.imageService.Search(file,characteristics).subscribe((searchResults: SearchResults[]) => {
       this.results = searchResults; // Store the results in the component
+      console.log(this.results)
   
       // For each result, fetch the associated image as a Blob
       this.results.forEach((result) => {
-        this.imageService.downloadFile(result.filename).subscribe(
+        this.imageService.downloadFile(result.thumbnail).subscribe(
           (blob) => {
             // Convert Blob to an Object URL for display
             result.image = URL.createObjectURL(blob);

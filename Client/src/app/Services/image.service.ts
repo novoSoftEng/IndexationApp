@@ -14,21 +14,27 @@ export class ImageService {
 
   constructor(private http: HttpClient) {}
 
-  // 1. Upload images
-  uploadImages(files: File[], category: string | null): Observable<any> {
-    const formData: FormData = new FormData();
-    
-    // Append each file to the FormData object
-    files.forEach(file => formData.append('images', file, file.name));
-    
-    // Append the category if provided
-    if (category) {
-      formData.append('category', category);
+  // 1. Upload images with thumbnails
+uploadImages(filesWithThumbnails: { objFile: File; thumbnail?: File }[], category: string | null): Observable<any> {
+  const formData: FormData = new FormData();
+
+  // Append each .obj file and its corresponding thumbnail to the FormData object
+  filesWithThumbnails.forEach(({ objFile, thumbnail }) => {
+    formData.append('objFiles', objFile, objFile.name);
+    if (thumbnail) {
+      formData.append('thumbnails', thumbnail, thumbnail.name); // Append thumbnail with the same name
     }
-  
-    // Send the POST request
-    return this.http.post<any>(`${this.apiUrl}/upload`, formData);
+  });
+
+  // Append the category if provided
+  if (category) {
+    formData.append('category', category);
   }
+
+  // Send the POST request
+  return this.http.post<any>(`${this.apiUrl}/upload`, formData);
+}
+
 
 // 2. Download a specific file (by filename)
 downloadFile(filename: string): Observable<Blob> {
@@ -70,7 +76,7 @@ downloadFile(filename: string): Observable<Blob> {
     const formData: FormData = new FormData();
     
     // Append each file to the FormData object
-    formData.append('image', file, file.name);
+    formData.append('file', file, file.name);
     if(characteristics){
       formData.append('characteristics',JSON.stringify(characteristics))
     }

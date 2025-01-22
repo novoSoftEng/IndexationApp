@@ -9,10 +9,11 @@ import {MatFormFieldModule} from '@angular/material/form-field';
 import { FormsModule } from '@angular/forms';
 import * as THREE from 'three';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
-interface upload{
+interface Upload{
   file: File;
-     preview?: string;
     category?:string | null ;
+    thumbnail?: File;
+    thumbnailUrl?:string;
     id: string; // Unique ID for each object
 }
 @Component({
@@ -61,72 +62,122 @@ export class UploadComponent {
     "Skyphos"
   ];
   category!: string | null;
+  uploadQueue: Upload[] = [];
+ 
 
-  constructor(private imageService : ImageService ){}
+  constructor(private imageService: ImageService) {}
+
   save(): void {
-    this.imageService.uploadImages(this.uploadQueue.map(item => item.file),this.category).subscribe({
+    const filesWithThumbnails = this.uploadQueue.map((item) => ({
+      objFile: item.file,
+      thumbnail: item.thumbnail,
+    }));
+  
+    console.log('Files to upload:', filesWithThumbnails);
+  
+    this.imageService.uploadImages(filesWithThumbnails, this.category).subscribe({
       next: (response) => {
-        console.log('Images uploaded successfully:', response);
-        // Optional: Reset the upload queue after successful upload
+        console.log('Images and thumbnails uploaded successfully:', response);
         this.uploadQueue = [];
       },
-      error: (error) => {
-        console.error('Error uploading images:', error);
-      }
+      error: (error) => console.error('Error uploading images and thumbnails:', error),
     });
   }
-
   
-  uploadQueue: upload[] = []; // Store files and their previews
 
-  // Triggered when files are selected via file input
   onFileSelect(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (input.files) {
-      Array.from(input.files).forEach(file => this.addToQueue(file));
+      Array.from(input.files).forEach((file) => this.addToQueue(file));
     }
   }
-  // Handles drag-and-drop reordering within the upload queue
-  drop(event: CdkDragDrop<upload[]>): void {
-    
+
+  onFolderSelect(event: Event): void {
+    const input = event.target as HTMLInputElement;
+  
+    if (input.files) {
+      const selectedFiles = Array.from(input.files);
+  
+      // Map each file into the uploadQueue if it's a valid thumbnail
+      selectedFiles.forEach((file) => {
+        const baseFileName = this.getBaseFileName(file.name).toLowerCase();
+  
+        // Attempt to find a match in the upload queue
+        const matchingUpload = this.uploadQueue.find(
+          (upload) => this.getBaseFileName(upload.file.name).toLowerCase() === baseFileName
+        );
+  
+        if (matchingUpload) {
+          matchingUpload.thumbnail = file; // Associate the thumbnail with the respective upload
+          console.log(`Thumbnail matched: ${file.name} -> ${matchingUpload.file.name}`);
+        } else {
+          console.warn(`No match found for thumbnail: ${file.name}`);
+        }
+      });
+  
+      // Update thumbnails in the queue with data URLs
+      this.matchThumbnailsToFiles();
+    }
+  }
+  
+  matchThumbnailsToFiles(): void {
+    this.uploadQueue.forEach((upload) => {
+      if (upload.thumbnail) {
+        console.log(`Creating thumbnail preview for: ${upload.thumbnail.name}`);
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          upload.thumbnailUrl = e.target?.result as string; // Assign the thumbnail preview URL
+        };
+        reader.readAsDataURL(upload.thumbnail); // Convert the thumbnail file to a data URL
+      } else {
+        console.warn(`No thumbnail found for file: ${upload.file.name}`);
+      }
+    });
+  }
+  
+  
+  getBaseFileName(filename: string): string {
+    const lastDotIndex = filename.lastIndexOf(".");
+    return lastDotIndex === -1 ? filename : filename.slice(0, lastDotIndex);
+  }
+  
+
+
+  drop(event: CdkDragDrop<Upload[]>): void {
     moveItemInArray(this.uploadQueue, event.previousIndex, event.currentIndex);
   }
 
-  // Triggered when files are dropped onto the upload area
   onFileDrop(event: DragEvent): void {
     event.preventDefault();
     if (event.dataTransfer?.files) {
-      Array.from(event.dataTransfer.files).forEach(file => this.addToQueue(file));
+      Array.from(event.dataTransfer.files).forEach((file) => this.addToQueue(file));
     }
   }
-  // Adds a file to the queue and creates its preview
-  addToQueue(file: File): void {
-    const id = crypto.randomUUID(); // Unique ID for tracking
-    this.uploadQueue.push({ file, id });
 
+  addToQueue(file: File): void {
+    const id = crypto.randomUUID();
+    this.uploadQueue.push({ file, id });
     if (file.name.endsWith('.obj')) {
       this.create3DPreview(file, id);
     }
+    this.matchThumbnailsToFiles(); // Update thumbnails after adding new files
   }
+
   create3DPreview(file: File, id: string): void {
     const reader = new FileReader();
     reader.onload = (e) => {
       const objData = e.target?.result as string;
-
-      // Initialize Three.js scene
       const scene = new THREE.Scene();
       const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
       const renderer = new THREE.WebGLRenderer();
-      renderer.setSize(50, 50); // Set canvas size
+      renderer.setSize(50, 50);
 
-      // Light and camera setup
       const light = new THREE.DirectionalLight(0xffffff, 1);
       light.position.set(1, 1, 1).normalize();
       scene.add(light);
 
       camera.position.z = 5;
 
-      // Load OBJ model
       const loader = new OBJLoader();
       loader.load(
         URL.createObjectURL(file),
@@ -134,29 +185,28 @@ export class UploadComponent {
           scene.add(obj);
           const animate = () => {
             requestAnimationFrame(animate);
-            obj.rotation.y += 0.01; // Rotate for better visualization
+            obj.rotation.y += 0.01;
             renderer.render(scene, camera);
           };
           animate();
         },
         undefined,
-        (error) => console.error('Error loading OBJ file:', error)
+        (error) => console.error('Error loading OBJ file:', error),
       );
 
-      // Append canvas to the DOM
       const container = document.getElementById(`preview-${id}`);
       if (container) {
-        container.innerHTML = ''; // Clear previous content
+        container.innerHTML = '';
         container.appendChild(renderer.domElement);
       }
     };
     reader.readAsDataURL(file);
   }
-  // Removes an image from the upload queue
-  removeImage(image: upload): void {
-    this.uploadQueue = this.uploadQueue.filter(item => item !== image);
+
+  removeImage(image: Upload): void {
+    this.uploadQueue = this.uploadQueue.filter((item) => item !== image);
   }
-  // Allows drag events on the upload area
+
   allowDrop(event: DragEvent): void {
     event.preventDefault();
   }

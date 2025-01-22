@@ -1,23 +1,18 @@
 <mat-grid-list cols="4" rowHeight="1:1" gutterSize="16px" class="gallery-grid">
-  <mat-grid-tile *ngFor="let file of paginatedImages" (click)="openDialog(file)">
+  <!-- Loop through images array and display thumbnails -->
+  <mat-grid-tile *ngFor="let image of paginatedImages" (click)="openDialog(image)">
     <div class="image-container">
-      <ng-container>
-        <!-- Canvas for rendering .obj -->
-        <canvas #canvas id="objCanvas-{{ file.filename }}" class="obj-canvas"></canvas>
-      </ng-container>
-      <ng-template #imageTemplate>
-        <img [src]="file.url" [alt]="file.filename" class="gallery-image" />
-      </ng-template>
+      <!-- Display only the thumbnail -->
+      <img [src]="image.thumbnail.url" [alt]="image.thumbnail.filename" class="gallery-image" />
       <div class="image-overlay">
         <mat-icon>zoom_in</mat-icon>
       </div>
     </div>
     <mat-grid-tile-footer>
-      <div class="image-title">{{ file.filename }}</div>
+      <div class="image-title">{{ image.thumbnail.filename }}</div>
     </mat-grid-tile-footer>
   </mat-grid-tile>
 </mat-grid-list>
-
 
 <!-- Pagination -->
 <mat-paginator
@@ -30,6 +25,11 @@
 <!-- Image Dialog -->
 <ng-template #dialogTemplate let-dialogRef="dialogRef">
   <mat-dialog-content>
-    <img [src]="dialogRef.data.url" [alt]="dialogRef.data.filename" class="full-screen-image"/>
+    <div class="dialog-content">
+      <!-- Display the .obj file in the dialog -->
+      <h3>{{ dialogRef.data.obj.filename }}</h3>
+      <p>3D Model Preview</p>
+      <canvas id="obj-preview"></canvas>
+    </div>
   </mat-dialog-content>
 </ng-template>
