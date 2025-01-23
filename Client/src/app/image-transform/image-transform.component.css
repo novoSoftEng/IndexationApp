@@ -1,103 +1,58 @@
-/* Style for the main transformation container */
-.transform-container {
+.container {
   max-width: 800px;
   margin: 0 auto;
-  padding: 20px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  background-color: #f9f9f9;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  font-family: Arial, sans-serif;
 }
 
-.transform-container h2,
-.transform-container h3 {
+h1 {
   text-align: center;
-  color: #333;
+  margin-bottom: 20px;
 }
 
-.upload-section {
+.upload-section,
+.input-section {
+  margin-bottom: 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: 20px;
 }
 
-#image-upload {
-  width: 100%;
-  max-width: 300px;
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  background-color: #fff;
-  outline: none;
-  transition: border-color 0.3s;
-}
-
-#image-upload:hover,
-#image-upload:focus {
-  border-color: #007bff;
-}
-
-.parameters {
-  margin-bottom: 20px;
-}
-
-.parameter-group {
-  display: flex;
-  flex-direction: column;
-  margin-bottom: 15px;
-}
-
-.parameter-group label {
+label {
   margin-bottom: 5px;
   font-weight: bold;
-  color: #555;
 }
 
-.parameter-group input,
-.parameter-group select {
-  width: 100%;
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  outline: none;
-  transition: border-color 0.3s;
+input[type="file"],
+input[type="number"] {
+  margin-bottom: 10px;
+  padding: 5px;
 }
 
-.parameter-group input:focus,
-.parameter-group select:focus {
-  border-color: #007bff;
-}
-
-.parameter-group button {
-  width: 100%;
-  max-width: 200px;
-  padding: 10px;
+button {
   background-color: #007bff;
-  color: #fff;
+  color: white;
   border: none;
-  border-radius: 4px;
+  padding: 10px 20px;
   cursor: pointer;
-  transition: background-color 0.3s;
+  border-radius: 5px;
 }
 
-.parameter-group button:hover {
+button:hover {
   background-color: #0056b3;
 }
 
-.preview {
-  text-align: center;
+.visualization-section {
+  display: flex;
+  justify-content: space-around;
   margin-top: 20px;
 }
 
-.transformed-image {
-  max-width: 100%;
-  height: auto;
-  border: 1px solid #ddd;
-  border-radius: 8px;
+.viewer {
+  text-align: center;
 }
 
-.no-preview {
-  font-size: 14px;
-  color: #777;
+canvas {
+  border: 1px solid #ccc;
+  width: 300px;
+  height: 300px;
 }

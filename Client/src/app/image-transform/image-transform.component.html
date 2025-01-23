@@ -1,81 +1,32 @@
-<div class="transform-container">
-  <h2>Live Image Transformation</h2>
+<div class="container">
+  <h1>OBJ File Transformation</h1>
 
-  <!-- Upload Section -->
   <div class="upload-section">
-    <label for="image-upload">Upload Image:</label>
+    <label for="file-upload">Upload OBJ File:</label>
+    <input type="file" id="file-upload" (change)="onFileSelect($event)" />
+  </div>
+
+  <div class="input-section">
+    <label for="reduction-rate">Reduction Rate (0.1 - 1.0):</label>
     <input
-      type="file"
-      id="image-upload"
-      (change)="onImageSelect($event)"
-      accept="image/*"
+      type="number"
+      id="reduction-rate"
+      [(ngModel)]="reductionRate"
+      min="0.1"
+      max="1.0"
+      step="0.1"
     />
+    <button (click)="transformFile()">Transform</button>
   </div>
 
-  <!-- Transformation Parameters -->
-  <div class="parameters">
-    <h3>Transformations</h3>
-
-    <!-- Crop Coordinates -->
-    <div class="parameter-group">
-      <label for="crop-coords">Crop Coords (x, y, w, h):</label>
-      <input
-        type="text"
-        id="crop-coords"
-        [(ngModel)]="cropCoords"
-        (input)="applyTransform()"
-        placeholder="e.g., 10,10,100,100"
-      />
+  <div class="visualization-section">
+    <div class="viewer">
+      <h2>Original File</h2>
+      <canvas #originalCanvas id="originalCanvas"></canvas>
     </div>
-
-    <!-- Resize Dimensions -->
-    <div class="parameter-group">
-      <label for="resize-dims">Resize Dimensions (width, height):</label>
-      <input
-        type="text"
-        id="resize-dims"
-        [(ngModel)]="resizeDims"
-        (input)="applyTransform()"
-        placeholder="e.g., 200,200"
-      />
+    <div class="viewer">
+      <h2>Transformed File</h2>
+      <canvas #transformedCanvas id="transformedCanvas"></canvas>
     </div>
-
-    <!-- Flip Option -->
-    <div class="parameter-group">
-      <label for="flip">Flip:</label>
-      <select id="flip" [(ngModel)]="flip" (change)="applyTransform()">
-        <option value="">None</option>
-        <option value="0">Vertical</option>
-        <option value="1">Horizontal</option>
-        <option value="-1">Both</option>
-      </select>
-    </div>
-
-    <!-- Rotation Angle -->
-    <div class="parameter-group">
-      <label for="rotate-angle">Rotate Angle:</label>
-      <input
-        type="number"
-        id="rotate-angle"
-        [(ngModel)]="rotateAngle"
-        placeholder="e.g., 90"
-      />
-    </div>
-
-    <!-- Apply Transform Button -->
-    <div class="parameter-group">
-      <button (click)="applyTransform()">Apply Transform</button>
-    </div>
-  </div>
-
-  <!-- Preview Section -->
-  <div class="preview">
-    <h3>Preview</h3>
-    <div *ngIf="transformedImageUrl; else noPreview">
-      <img [src]="transformedImageUrl" alt="Transformed Image" class="transformed-image" />
-    </div>
-    <ng-template #noPreview>
-      <p>No image to preview. Upload an image to start transformations.</p>
-    </ng-template>
   </div>
 </div>

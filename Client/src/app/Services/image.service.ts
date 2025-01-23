@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { BehaviorSubject, catchError, map, Observable, throwError } from 'rxjs';
 import { environment } from '../environment';
 import { SearchResults } from '../interfaces/search-results';
@@ -84,25 +84,34 @@ downloadFile(filename: string): Observable<Blob> {
     
     return this.http.post<any>(`${this.searchApi}/search`, formData);
   }
-  Transform(file: File, cropCoords?: string, resizeDims?: string, flip?: string, rotateAngle?: string): Observable<Blob> {
-    const formData: FormData = new FormData();
-    
-    // Append each transformation parameter if available
-    formData.append('image', file, file.name);
-    if (cropCoords) {
-      formData.append('crop_coords', cropCoords);
-    }
-    if (resizeDims) {
-      formData.append('resize_dims', resizeDims);
-    }
-    if (flip) {
-      formData.append('flip', flip);
-    }
-    if (rotateAngle) {
-      formData.append('rotate_angle', rotateAngle);
-    }
-
-    // Perform HTTP POST request to the server API
-    return this.http.post<Blob>(`${this.searchApi}/transform`, formData, { responseType: 'blob' as 'json' });
+  Transform(file: File, reductionRate: number): Observable<Blob> {
+    const formData = new FormData();
+    formData.append('object', file);
+    formData.append('reduction_rate', reductionRate.toString());
+  
+    // Set the expected response type to 'blob' to handle file downloads
+    return this.http.post(`${this.searchApi}/transform`, formData, {
+      responseType: 'blob', // Expect a binary file response
+    }).pipe(
+      catchError(this.handleError)
+    );
   }
+  
+  /**
+   * Handles HTTP errors.
+   * @param error The HTTP error response.
+   * @returns An Observable with an error message.
+   */
+  private handleError(error: HttpErrorResponse): Observable<never> {
+    let errorMessage = 'An unknown error occurred!';
+    if (error.error instanceof ErrorEvent) {
+      // Client-side or network error
+      errorMessage = `Error: ${error.error.message}`;
+    } else {
+      // Backend error
+      errorMessage = `Server returned code ${error.status}, message: ${error.message}`;
+    }
+    return throwError(errorMessage);
+  }
+  
 }

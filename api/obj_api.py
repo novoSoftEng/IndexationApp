@@ -1,6 +1,6 @@
 import os
 import numpy as np
-from flask import Flask, request, jsonify, Response
+from flask import Flask, request, jsonify, Response,send_file
 from pymongo import MongoClient
 from flask_restful import Api, Resource
 from werkzeug.utils import secure_filename
@@ -324,21 +324,25 @@ class TransformService(Resource):
             model = ObjModel()
             model.load(input_path)
 
+            # Simplify the model
             simplified_model = edge_collapse(model, reduction_rate)
 
-            # Save the simplified model
-            output_filename = os.path.join(TRANSFORM_FOLDER, secure_filename('transformed_obj.obj'))
-            output_path = self.save_model(simplified_model, output_filename)
+            # Save the simplified model to a file
+            output_filename = secure_filename('transformed_obj.obj')
+            output_path = os.path.join(TRANSFORM_FOLDER, output_filename)
+            self.save_model(simplified_model, output_path)
 
         except Exception as e:
             return {"message": f"Error during transformation: {str(e)}"}, 500
         finally:
             os.remove(input_path)
 
-        return {
-            "message": "Transformation successful",
-            "transformed_obj_path": output_path,
-        }
+        # Return the file as a response
+        return send_file(
+            output_path,
+            as_attachment=True,
+            mimetype='application/octet-stream'
+        )
 
     def save_model(self, model, filename):
         output_path = os.path.join(os.getcwd(), filename)
@@ -364,8 +368,6 @@ class TransformService(Resource):
             obj_lines.append(f"vt {' '.join(map(str, texture))}")
 
         return '\n'.join(obj_lines)
-
-
 # Register API Endpoints
 api.add_resource(DescriptorService, '/calculate-descriptors')
 api.add_resource(SearchService, '/search')
