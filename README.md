@@ -1,14 +1,17 @@
-# Content-Based Image Retrieval (CBIR) Application
+# MULTIMEDIA MINING INDEXING Project :
+
+
+# -> 2D Content-Based Image Retrieval System
 
 ## Overview
 
-This project is a web application designed to implement the core functionalities of a **Content-Based Image Retrieval (CBIR) system** with and without relevance feedback. Users can upload, manage, and search for images based on their visual content using advanced algorithms. The application supports two primary search methods: simple retrieval and advanced retrieval with **Query-Point Movement** relevance feedback.
+This project is a web application designed to implement the core functionalities of a **2D Content-Based Image Retrieval System** with and without relevance feedback. Users can upload, manage, and search for images based on their visual content using advanced algorithms. The application supports two primary search methods: simple retrieval and advanced retrieval with **Query-Point Movement** relevance feedback.
 
 ---
 
-## Additional Information
+## ⚠️ Important Information
 
-- main Branch -> Content-Based Image Retrieval (CBIR) Application
+- main Branch -> 2D Content-Based Image Retrieval System
 - 3d Branch -> 3D object search and retrieval Application
 
 ---
