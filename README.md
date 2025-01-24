@@ -1,4 +1,6 @@
-# README: 3D Model Content-Based Indexing and Retrieval System
+# MULTIMEDIA MINING INDEXING Project :
+
+# -> 3D Model Content-Based Indexing and Retrieval System
 
 ## Project Purpose
 
@@ -6,10 +8,10 @@ The goal of this project is to develop the core functionalities of a **content-b
 
 ---
 
-## Additional Information
+## ⚠️ Important Information
 
-- main Branch -> Content-Based Image Retrieval (CBIR) Application
-- 3d Branch -> 3D object search and retrieval Application
+- **main** Branch -> 2D Content-Based Image Retrieval System
+- **3d** Branch -> 3D object search and retrieval Application
 
 ---
 
